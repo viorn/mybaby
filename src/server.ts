@@ -9,11 +9,13 @@ import {
   listEntries,
   listEntriesRange,
   listFeedings,
+  listFeedingsRange,
   startSleep,
   stopSleep,
   updateEntry,
   updateFeeding,
   type Entry,
+  type Feeding,
 } from "./db";
 import indexHtml from "../public/index.html" with { type: "file" };
 import styleCss from "../public/style.css" with { type: "file" };
@@ -71,45 +73,62 @@ const server = Bun.serve({
         const fromIso = from ? new Date(`${from}T00:00:00`).toISOString() : "0000-01-01T00:00:00.000Z";
         const toIso = to ? new Date(`${to}T23:59:59.999`).toISOString() : "9999-12-31T23:59:59.999Z";
 
-        const rows = listEntriesRange(fromIso, toIso);
+        const sleepRows = listEntriesRange(fromIso, toIso);
+        const feedingRows = listFeedingsRange(fromIso, toIso);
         const suffix = from || to ? `-${from ?? "start"}_${to ?? "end"}` : "-all";
 
         if (format === "json") {
-          return new Response(JSON.stringify(rows, null, 2), {
+          const payload = { entries: sleepRows, feedings: feedingRows };
+          return new Response(JSON.stringify(payload, null, 2), {
             headers: {
               "content-type": "application/json; charset=utf-8",
-              "content-disposition": `attachment; filename="sleep${suffix}.json"`,
+              "content-disposition": `attachment; filename="mybaby${suffix}.json"`,
             },
           });
         }
 
-        const csv = toCsv(rows);
+        const csv = `${toCsv(sleepRows)}\n\n${toFeedingsCsv(feedingRows)}`;
         return new Response(`\uFEFF${csv}`, {
           headers: {
             "content-type": "text/csv; charset=utf-8",
-            "content-disposition": `attachment; filename="sleep${suffix}.csv"`,
+            "content-disposition": `attachment; filename="mybaby${suffix}.csv"`,
           },
         });
       }
 
       // ---------- Импорт ----------
       if (pathname === "/api/import" && req.method === "POST") {
+        // Форматы: массив записей (+type=entries|feedings) или объект {entries, feedings}
         const type = url.searchParams.get("type") === "feedings" ? "feedings" : "entries";
-        const items = Array.isArray(body) ? body : body.items;
-        if (!Array.isArray(items)) return json({ error: "Ожидается массив записей" }, 400);
+        let entriesItems: any[] = [];
+        let feedingsItems: any[] = [];
 
-        let imported = 0;
-        for (const it of items) {
-          if (type === "entries") {
-            if (!it?.started_at) continue;
-            createEntry(String(it.started_at), it.ended_at ? String(it.ended_at) : null, String(it.note ?? ""));
-          } else {
-            if (!it?.at) continue;
-            createFeeding(String(it.at), Math.max(0, Math.round(Number(it.amount_ml) || 0)));
-          }
-          imported++;
+        if (Array.isArray(body)) {
+          if (type === "entries") entriesItems = body;
+          else feedingsItems = body;
+        } else if (Array.isArray(body?.items)) {
+          if (type === "entries") entriesItems = body.items;
+          else feedingsItems = body.items;
+        } else if (Array.isArray(body?.entries) || Array.isArray(body?.feedings)) {
+          entriesItems = Array.isArray(body.entries) ? body.entries : [];
+          feedingsItems = Array.isArray(body.feedings) ? body.feedings : [];
+        } else {
+          return json({ error: "Ожидается массив записей или объект {entries, feedings}" }, 400);
         }
-        return json({ ok: true, imported });
+
+        let importedEntries = 0;
+        let importedFeedings = 0;
+        for (const it of entriesItems) {
+          if (!it?.started_at) continue;
+          createEntry(String(it.started_at), it.ended_at ? String(it.ended_at) : null, String(it.note ?? ""));
+          importedEntries++;
+        }
+        for (const it of feedingsItems) {
+          if (!it?.at) continue;
+          createFeeding(String(it.at), Math.max(0, Math.round(Number(it.amount_ml) || 0)));
+          importedFeedings++;
+        }
+        return json({ ok: true, importedEntries, importedFeedings });
       }
 
       // ---------- Питание ----------
@@ -189,6 +208,23 @@ const csvCell = (v: string | number) => {
   return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 
+const toFeedingsCsv = (rows: Feeding[]) => {
+  const head = ["id", "date", "time", "amount_ml"];
+  const lines = rows.map((f) => {
+    const d = new Date(f.at);
+    const date = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+    return [
+      f.id,
+      date,
+      localDateTime(f.at).slice(11),
+      f.amount_ml,
+    ]
+      .map(csvCell)
+      .join(";");
+  });
+  return ["КОРМЛЕНИЕ", head.join(";"), ...lines].join("\n");
+};
+
 const toCsv = (rows: Entry[]) => {
   const head = ["id", "date", "start", "end", "duration_min", "note"];
   const lines = rows.map((e) => {
@@ -205,7 +241,7 @@ const toCsv = (rows: Entry[]) => {
       .map(csvCell)
       .join(";");
   });
-  return [head.join(";"), ...lines].join("\n");
+  return ["СОН", head.join(";"), ...lines].join("\n");
 };
 
 console.log(`👶 Baby sleep tracker → http://localhost:${server.port}`);

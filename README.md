@@ -80,11 +80,13 @@ echo "PORT=8080" > .env && ./mybaby
 | `PATCH` | `/api/feedings/:id` | Изменить кормление |
 | `DELETE` | `/api/feedings/:id` | Удалить кормление |
 | `GET` | `/api/export?format=csv\|json&from=YYYY-MM-DD&to=YYYY-MM-DD` | Экспорт (`from`/`to` необязательны) |
-| `POST` | `/api/import?type=entries\|feedings` | Импорт JSON-массива (формат как у экспорта JSON) |
+| `POST` | `/api/import?type=entries\|feedings` | Импорт: массив одного типа или полный объект `{entries, feedings}` |
 
 Время в API — ISO UTC; в UI и CSV — локальное время сервера.
 
-CSV: разделитель `;`, BOM, колонки `id;date;start;end;duration_min;note` — открывается в Excel без настроек.
+CSV: разделитель `;`, BOM, две секции — `СОН` (`id;date;start;end;duration_min;note`) и `КОРМЛЕНИЕ` (`id;date;time;amount_ml`) — открывается в Excel без настроек.
+
+JSON-экспорт: `{ "entries": [...], "feedings": [...] }` — файл можно импортировать обратно через «📥 Импорт JSON».
 
 ## Пакет для Debian (проверено на Debian 13)
 

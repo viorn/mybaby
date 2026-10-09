@@ -99,6 +99,13 @@ export const listFeedings = (limit = 200): Feeding[] =>
 export const getFeeding = (id: number): Feeding | undefined =>
   db.query<Feeding, [number]>("SELECT * FROM feedings WHERE id = ?").get(id) ?? undefined;
 
+export const listFeedingsRange = (fromIso: string, toIso: string): Feeding[] =>
+  db
+    .query<Feeding, [string, string]>(
+      "SELECT * FROM feedings WHERE at >= ? AND at <= ? ORDER BY at ASC"
+    )
+    .all(fromIso, toIso);
+
 export const createFeeding = (at: string, amountMl: number): Feeding =>
   db
     .query<Feeding, [string, number]>(

@@ -470,17 +470,36 @@ $("home-export-json").addEventListener("click", () => exportData("json", false))
 
 const importJson = async (file) => {
   const data = JSON.parse(await file.text());
-  const items = Array.isArray(data) ? data : data.items;
-  if (!Array.isArray(items) || items.length === 0) {
-    throw new Error("файл не содержит записей");
-  }
-  const isFeeding = items.every((it) => it?.at !== undefined || it?.amount_ml !== undefined);
-  const type = isFeeding ? "feedings" : "entries";
-  const label = type === "feedings" ? "кормления" : "сон";
-  if (!confirm(`Записей в файле: ${items.length}. Импортировать как «${label}»?`)) return;
 
-  const res = await api(`/api/import?type=${type}`, { method: "POST", body: JSON.stringify(items) });
-  alert(`Импортировано записей: ${res.imported}`);
+  // Полный экспорт: { entries: [...], feedings: [...] }
+  if (!Array.isArray(data) && (Array.isArray(data?.entries) || Array.isArray(data?.feedings))) {
+    const total = (data.entries?.length || 0) + (data.feedings?.length || 0);
+    if (total === 0) throw new Error("файл не содержит записей");
+    if (
+      !confirm(
+        `В файле: сон — ${data.entries?.length || 0}, кормлений — ${data.feedings?.length || 0}. Импортировать?`
+      )
+    )
+      return;
+    const res = await api("/api/import", { method: "POST", body: JSON.stringify(data) });
+    alert(`Импортировано: сон — ${res.importedEntries}, кормлений — ${res.importedFeedings}`);
+  } else {
+    // Массив одного типа
+    const items = Array.isArray(data) ? data : data.items;
+    if (!Array.isArray(items) || items.length === 0) {
+      throw new Error("файл не содержит записей");
+    }
+    const isFeeding = items.every((it) => it?.at !== undefined || it?.amount_ml !== undefined);
+    const type = isFeeding ? "feedings" : "entries";
+    const label = type === "feedings" ? "кормления" : "сон";
+    if (!confirm(`Записей в файле: ${items.length}. Импортировать как «${label}»?`)) return;
+
+    const res = await api(`/api/import?type=${type}`, {
+      method: "POST",
+      body: JSON.stringify(items),
+    });
+    alert(`Импортировано записей: ${res.importedEntries + res.importedFeedings}`);
+  }
   await refresh();
 };
 
