@@ -151,6 +151,22 @@ const renderJournal = () => {
     return;
   }
 
+  // Итог сна за каждый день: пересечение интервалов сна с календарными сутками
+  // (ночной сон через полночь делится между днями)
+  const dayTotals = new Map();
+  for (const e of entries) {
+    let s = new Date(e.started_at).getTime();
+    const en = e.ended_at ? new Date(e.ended_at).getTime() : Date.now();
+    while (s < en) {
+      const d = new Date(s);
+      const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+      const seg = Math.min(en, dayEnd) - s;
+      const key = d.toDateString();
+      dayTotals.set(key, (dayTotals.get(key) || 0) + seg);
+      s = dayEnd;
+    }
+  }
+
   let lastDay = null;
   for (const e of entries) {
     const start = new Date(e.started_at);
@@ -160,7 +176,9 @@ const renderJournal = () => {
       lastDay = dayKey;
       const li = document.createElement("li");
       li.className = "day-label";
-      li.textContent = dayName(start);
+      li.innerHTML =
+        `${escapeHtml(dayName(start))} ` +
+        `<span class="feeding-day-total">(${fmtDuration(dayTotals.get(dayKey) || 0)})</span>`;
       list.appendChild(li);
     }
 
