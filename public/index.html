@@ -47,7 +47,10 @@
         <h2>🍼 Кормление</h2>
         <div class="feeding-form">
           <label>Закончило есть
-            <input id="home-feeding-at" type="datetime-local" />
+            <div class="time-row">
+              <input id="home-feeding-at" type="datetime-local" />
+              <button type="button" id="home-feeding-now" class="now-btn">⏱</button>
+            </div>
           </label>
           <label>Объём, мл
             <input id="home-feeding-amount" type="number" inputmode="numeric" min="0" step="5" value="60" />
@@ -108,7 +111,10 @@
         <h2>Кормление</h2>
         <div class="feeding-form">
           <label>Закончило есть
-            <input id="feeding-at" type="datetime-local" />
+            <div class="time-row">
+              <input id="feeding-at" type="datetime-local" />
+              <button type="button" id="feeding-now" class="now-btn">⏱</button>
+            </div>
           </label>
           <label>Объём, мл
             <input id="feeding-amount" type="number" inputmode="numeric" min="0" step="5" value="60" />

@@ -84,6 +84,7 @@ const renderTimer = () => {
 };
 
 const tick = () => {
+  refreshUntouchedFeedingTime();
   const now = Date.now();
   if (active) {
     const ms = fmtClock(now - new Date(active.started_at));
@@ -353,26 +354,62 @@ const FEEDING_FORMS = [
   ["home-feeding-at", "home-feeding-amount"],
 ];
 
+const isDirty = (el) => el.dataset.dirty === "1";
+
+// Поля времени: помечаем как «изменённое пользователем», чтобы не перезаписывать
+for (const [atId] of FEEDING_FORMS) {
+  $(atId).addEventListener("input", (e) => {
+    e.target.dataset.dirty = "1";
+  });
+}
+
+const setFeedingNow = (atId) => {
+  const el = $(atId);
+  el.value = toLocalInput(new Date().toISOString());
+  delete el.dataset.dirty;
+};
+
+$("feeding-now").addEventListener("click", () => setFeedingNow("feeding-at"));
+$("home-feeding-now").addEventListener("click", () => setFeedingNow("home-feeding-at"));
+
 const prefillFeedingForm = () => {
   const saved = Number(localStorage.getItem(AMOUNT_KEY));
   const lastServer = feedings[0]?.amount_ml;
   const amount = saved || lastServer || 60;
   for (const [atId, amountId] of FEEDING_FORMS) {
-    $(atId).value = toLocalInput(new Date().toISOString());
+    const at = $(atId);
+    at.value = toLocalInput(new Date().toISOString());
+    delete at.dataset.dirty;
     $(amountId).value = amount;
+  }
+};
+
+// Раз в минуту подтягиваем «нетронутые» поля времени к текущему времени
+let lastTickMinute = new Date().getMinutes();
+
+const refreshUntouchedFeedingTime = () => {
+  const m = new Date().getMinutes();
+  if (m === lastTickMinute) return;
+  lastTickMinute = m;
+  for (const [atId] of FEEDING_FORMS) {
+    const el = $(atId);
+    if (!isDirty(el)) el.value = toLocalInput(new Date().toISOString());
   }
 };
 
 const saveFeeding = async (atId, amountId) => {
   const amount = Math.max(0, Math.round(Number($(amountId).value) || 0));
+  // Если время не трогали вручную — фиксируем текущий момент
+  const atIso = isDirty($(atId))
+    ? fromLocalInput($(atId).value)
+    : new Date().toISOString();
   try {
     await api("/api/feedings", {
       method: "POST",
-      body: JSON.stringify({ at: fromLocalInput($(atId).value), amount_ml: amount }),
+      body: JSON.stringify({ at: atIso, amount_ml: amount }),
     });
     localStorage.setItem(AMOUNT_KEY, String(amount));
     await refresh();
-    $(atId).value = toLocalInput(new Date().toISOString());
   } catch (e) {
     alert(e.message);
   }
