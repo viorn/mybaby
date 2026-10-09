@@ -86,6 +86,7 @@ const renderTimer = () => {
 };
 
 const tick = () => {
+  refreshOpenFormTimes();
   const now = Date.now();
   if (active) {
     const ms = fmtClock(now - new Date(active.started_at));
@@ -266,6 +267,7 @@ $("add-save").addEventListener("click", async () => {
     });
     $("add-form").classList.add("hidden");
     $("add-note").value = "";
+    for (const id of ["add-start", "add-end", "add-note"]) delete $(id).dataset.dirty;
     await refresh();
   } catch (e) {
     alert(e.message);
@@ -379,11 +381,29 @@ const FEEDING_LAST_IDS = ["home-feeding-last", "tab-feeding-last"];
 
 // Поля, которые пользователь редактирует, не перезаписываются при refresh
 const isDirty = (el) => el.dataset.dirty === "1";
-for (const id of [...FEEDING_AMOUNT_IDS, "feeding-add-amount"]) {
+for (const id of [
+  ...FEEDING_AMOUNT_IDS,
+  "feeding-add-amount",
+  "feeding-add-at",
+  "add-start",
+  "add-end",
+  "add-note",
+]) {
   $(id).addEventListener("input", (e) => {
     e.target.dataset.dirty = "1";
   });
 }
+
+// Актуализируем время в открытых формах, если пользователь его не менял
+const refreshOpenFormTimes = () => {
+  const now = toLocalInput(new Date().toISOString());
+  if (!$("feeding-add-form").classList.contains("hidden") && !isDirty($("feeding-add-at"))) {
+    $("feeding-add-at").value = now;
+  }
+  if (!$("add-form").classList.contains("hidden") && !isDirty($("add-start"))) {
+    $("add-start").value = now;
+  }
+};
 
 const prefillFeedingForm = () => {
   const saved = Number(localStorage.getItem(AMOUNT_KEY));
@@ -452,6 +472,7 @@ $("feeding-add-save").addEventListener("click", async () => {
     localStorage.setItem(AMOUNT_KEY, String(amount));
     $("feeding-add-form").classList.add("hidden");
     delete $("feeding-add-amount").dataset.dirty;
+    delete $("feeding-add-at").dataset.dirty;
     await refresh();
   } catch (e) {
     alert(e.message);
@@ -623,6 +644,7 @@ const refresh = async () => {
   renderFeedingJournal();
   renderLastFeeding();
   renderDay();
+  refreshOpenFormTimes();
 };
 
 refresh();
