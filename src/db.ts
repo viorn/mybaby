@@ -19,6 +19,20 @@ export type Entry = {
   note: string;
 };
 
+export type Feeding = {
+  id: number;
+  at: string; // ISO UTC — время окончания кормления
+  amount_ml: number;
+};
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS feedings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    at TEXT NOT NULL,
+    amount_ml INTEGER NOT NULL DEFAULT 60
+  );
+`);
+
 export const getActive = (): Entry | undefined =>
   db
     .query<Entry, []>("SELECT * FROM entries WHERE ended_at IS NULL ORDER BY id DESC LIMIT 1")
@@ -75,5 +89,31 @@ export const updateEntry = (
 
 export const deleteEntry = (id: number): boolean =>
   db.query("DELETE FROM entries WHERE id = ?").run(id).changes > 0;
+
+// ---------- Питание ----------
+export const listFeedings = (limit = 200): Feeding[] =>
+  db
+    .query<Feeding, [number]>("SELECT * FROM feedings ORDER BY at DESC LIMIT ?")
+    .all(limit);
+
+export const getFeeding = (id: number): Feeding | undefined =>
+  db.query<Feeding, [number]>("SELECT * FROM feedings WHERE id = ?").get(id) ?? undefined;
+
+export const createFeeding = (at: string, amountMl: number): Feeding =>
+  db
+    .query<Feeding, [string, number]>(
+      "INSERT INTO feedings (at, amount_ml) VALUES (?, ?) RETURNING *"
+    )
+    .get(at, amountMl)!;
+
+export const updateFeeding = (id: number, at: string, amountMl: number): Feeding | undefined =>
+  db
+    .query<Feeding, [string, number, number]>(
+      "UPDATE feedings SET at = ?, amount_ml = ? WHERE id = ? RETURNING *"
+    )
+    .get(at, amountMl, id) ?? undefined;
+
+export const deleteFeeding = (id: number): boolean =>
+  db.query("DELETE FROM feedings WHERE id = ?").run(id).changes > 0;
 
 export default db;

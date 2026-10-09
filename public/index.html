@@ -9,48 +9,79 @@
 </head>
 <body>
   <main>
-    <h1>🌙 Сон</h1>
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="sleep">🌙 Сон</button>
+      <button class="tab-btn" data-tab="feeding">🍼 Питание</button>
+    </nav>
 
-    <!-- Таймер -->
-    <section class="timer">
-      <div id="timer-status" class="timer-status">Не спит</div>
-      <div id="timer-elapsed" class="timer-elapsed hidden">00:00</div>
-      <button id="timer-btn" class="timer-btn">Начать сон</button>
-      <div id="timer-note-wrap" class="hidden">
-        <input id="timer-note" type="text" placeholder="Заметка (необязательно)" />
-      </div>
-    </section>
-
-    <!-- Экспорт -->
-    <section class="export">
-      <h2>Экспорт</h2>
-      <div class="export-row">
-        <label>c <input id="export-from" type="date" /></label>
-        <label>по <input id="export-to" type="date" /></label>
-        <button id="export-csv" class="export-btn">CSV</button>
-        <button id="export-json" class="export-btn">JSON</button>
-      </div>
-    </section>
-
-    <!-- Журнал -->
-    <section>
-      <div class="journal-head">
-        <h2>Журнал</h2>
-        <button id="add-btn" class="ghost-btn">+ Добавить вручную</button>
-      </div>
-      <div id="add-form" class="edit-form hidden">
-        <label>Начало <input id="add-start" type="datetime-local" /></label>
-        <label>Конец <input id="add-end" type="datetime-local" /></label>
-        <label>Заметка <input id="add-note" type="text" placeholder="Необязательно" /></label>
-        <div class="form-actions">
-          <button id="add-save">Сохранить</button>
-          <button id="add-cancel" class="ghost-btn">Отмена</button>
+    <!-- ==================== СОН ==================== -->
+    <div id="tab-sleep">
+      <!-- Таймер -->
+      <section class="timer">
+        <div id="timer-status" class="timer-status">Не спит</div>
+        <div id="timer-elapsed" class="timer-elapsed hidden">00:00</div>
+        <button id="timer-btn" class="timer-btn">Начать сон</button>
+        <div id="timer-note-wrap" class="hidden">
+          <input id="timer-note" type="text" placeholder="Заметка (необязательно)" />
         </div>
-      </div>
-      <ul id="journal"></ul>
-    </section>
+      </section>
+
+      <!-- Экспорт -->
+      <section class="export">
+        <h2>Экспорт</h2>
+        <div class="export-row">
+          <label>c <input id="export-from" type="date" /></label>
+          <label>по <input id="export-to" type="date" /></label>
+          <button id="export-csv" class="export-btn">CSV</button>
+          <button id="export-json" class="export-btn">JSON</button>
+        </div>
+      </section>
+
+      <!-- Журнал сна -->
+      <section>
+        <div class="journal-head">
+          <h2>Журнал</h2>
+          <button id="add-btn" class="ghost-btn">+ Добавить вручную</button>
+        </div>
+        <div id="add-form" class="edit-form hidden">
+          <label>Начало <input id="add-start" type="datetime-local" /></label>
+          <label>Конец <input id="add-end" type="datetime-local" /></label>
+          <label>Заметка <input id="add-note" type="text" placeholder="Необязательно" /></label>
+          <div class="form-actions">
+            <button id="add-save">Сохранить</button>
+            <button id="add-cancel" class="ghost-btn">Отмена</button>
+          </div>
+        </div>
+        <ul id="journal"></ul>
+      </section>
+    </div>
+
+    <!-- ==================== ПИТАНИЕ ==================== -->
+    <div id="tab-feeding" class="hidden">
+      <!-- Быстрая запись -->
+      <section class="timer">
+        <h2>Кормление</h2>
+        <div class="feeding-form">
+          <label>Закончило есть
+            <input id="feeding-at" type="datetime-local" />
+          </label>
+          <label>Объём, мл
+            <input id="feeding-amount" type="number" inputmode="numeric" min="0" step="5" value="60" />
+          </label>
+          <button id="feeding-save" class="timer-btn">Записать</button>
+        </div>
+        <div class="feeding-hint">Объём подтягивается из последней записи</div>
+      </section>
+
+      <!-- Журнал питания -->
+      <section>
+        <div class="journal-head"><h2>Журнал питания</h2></div>
+        <ul id="feeding-journal"></ul>
+      </section>
+    </div>
   </main>
 
+  <!-- Диалог редактирования сна -->
   <dialog id="edit-dialog">
     <form id="edit-form" method="dialog">
       <h3>Редактировать</h3>
@@ -61,6 +92,20 @@
         <button type="submit" id="edit-save">Сохранить</button>
         <button type="button" id="edit-delete" class="danger">Удалить</button>
         <button type="button" id="edit-cancel" class="ghost-btn">Отмена</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Диалог редактирования кормления -->
+  <dialog id="feeding-dialog">
+    <form id="feeding-edit-form" method="dialog">
+      <h3>Редактировать кормление</h3>
+      <label>Закончило есть <input id="feeding-edit-at" type="datetime-local" required /></label>
+      <label>Объём, мл <input id="feeding-edit-amount" type="number" min="0" step="5" /></label>
+      <div class="form-actions">
+        <button type="submit" id="feeding-edit-save">Сохранить</button>
+        <button type="button" id="feeding-edit-delete" class="danger">Удалить</button>
+        <button type="button" id="feeding-edit-cancel" class="ghost-btn">Отмена</button>
       </div>
     </form>
   </dialog>

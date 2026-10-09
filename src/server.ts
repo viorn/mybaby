@@ -1,13 +1,18 @@
 import {
   createEntry,
+  createFeeding,
   deleteEntry,
+  deleteFeeding,
   getActive,
   getEntry,
+  getFeeding,
   listEntries,
   listEntriesRange,
+  listFeedings,
   startSleep,
   stopSleep,
   updateEntry,
+  updateFeeding,
   type Entry,
 } from "./db";
 import indexHtml from "../public/index.html" with { type: "file" };
@@ -85,6 +90,29 @@ const server = Bun.serve({
             "content-disposition": `attachment; filename="sleep${suffix}.csv"`,
           },
         });
+      }
+
+      // ---------- Питание ----------
+      if (pathname === "/api/feedings" && req.method === "GET") {
+        return json(listFeedings());
+      }
+
+      if (pathname === "/api/feedings" && req.method === "POST") {
+        if (!body.at) return json({ error: "at is required" }, 400);
+        const amount = Math.max(0, Math.round(Number(body.amount_ml) || 0));
+        return json(createFeeding(body.at, amount), 201);
+      }
+
+      const fm = pathname.match(/^\/api\/feedings\/(\d+)$/);
+      if (fm && (req.method === "PATCH" || req.method === "DELETE")) {
+        const fid = Number(fm[1]);
+        if (!getFeeding(fid)) return json({ error: "Запись не найдена" }, 404);
+
+        if (req.method === "DELETE") return json({ ok: deleteFeeding(fid) });
+
+        if (!body.at) return json({ error: "at is required" }, 400);
+        const amount = Math.max(0, Math.round(Number(body.amount_ml) || 0));
+        return json(updateFeeding(fid, body.at, amount));
       }
 
       if (pathname === "/api/timer/start" && req.method === "POST") {

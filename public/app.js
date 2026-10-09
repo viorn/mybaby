@@ -140,6 +140,19 @@ const HTML_ESCAPES = {
 
 const escapeHtml = (s) => s.replace(/[\u0026<>"']/g, (c) => HTML_ESCAPES[c]);
 
+// ---------- вкладки ----------
+const showTab = (name) => {
+  document.querySelectorAll(".tab-btn").forEach((b) =>
+    b.classList.toggle("active", b.dataset.tab === name)
+  );
+  $("tab-sleep").classList.toggle("hidden", name !== "sleep");
+  $("tab-feeding").classList.toggle("hidden", name !== "feeding");
+};
+
+document.querySelectorAll(".tab-btn").forEach((b) =>
+  b.addEventListener("click", () => showTab(b.dataset.tab))
+);
+
 // ---------- add form ----------
 $("add-btn").addEventListener("click", () => {
   $("add-form").classList.toggle("hidden");
@@ -224,12 +237,134 @@ $("edit-delete").addEventListener("click", async () => {
   }
 });
 
+// ---------- питание ----------
+let feedings = [];
+let editingFeedingId = null;
+const AMOUNT_KEY = "mybaby:lastAmount";
+
+const renderFeedingJournal = () => {
+  const list = $("feeding-journal");
+  list.innerHTML = "";
+
+  if (feedings.length === 0) {
+    list.innerHTML = '<li class="empty">Пока нет записей</li>';
+    return;
+  }
+
+  let lastDay = null;
+  let dayTotal = 0;
+  for (const f of feedings) {
+    const at = new Date(f.at);
+    const dayKey = at.toDateString();
+
+    if (dayKey !== lastDay) {
+      if (lastDay !== null) {
+        const total = document.createElement("li");
+        total.className = "day-label";
+        total.innerHTML = `Итого за день: <span class="feeding-day-total">${dayTotal} мл</span>`;
+        list.appendChild(total);
+      }
+      lastDay = dayKey;
+      dayTotal = 0;
+      const li = document.createElement("li");
+      li.className = "day-label";
+      li.textContent = dayName(at);
+      list.appendChild(li);
+    }
+    dayTotal += f.amount_ml;
+
+    const li = document.createElement("li");
+    li.className = "entry";
+    li.innerHTML = `
+      <div class="entry-main">
+        <div class="entry-time">${at.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</div>
+      </div>
+      <div class="entry-amount">${f.amount_ml} мл</div>
+    `;
+    li.addEventListener("click", () => openFeedingEdit(f));
+    list.appendChild(li);
+  }
+
+  const total = document.createElement("li");
+  total.className = "day-label";
+  total.innerHTML = `Итого за день: <span class="feeding-day-total">${dayTotal} мл</span>`;
+  list.appendChild(total);
+};
+
+const prefillFeedingForm = () => {
+  $("feeding-at").value = toLocalInput(new Date().toISOString());
+  const saved = Number(localStorage.getItem(AMOUNT_KEY));
+  const lastServer = feedings[0]?.amount_ml;
+  $("feeding-amount").value = saved || lastServer || 60;
+};
+
+$("feeding-save").addEventListener("click", async () => {
+  const amount = Math.max(0, Math.round(Number($("feeding-amount").value) || 0));
+  try {
+    await api("/api/feedings", {
+      method: "POST",
+      body: JSON.stringify({ at: fromLocalInput($("feeding-at").value), amount_ml: amount }),
+    });
+    localStorage.setItem(AMOUNT_KEY, String(amount));
+    await refresh();
+    $("feeding-at").value = toLocalInput(new Date().toISOString());
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
+// ---------- диалог кормления ----------
+const feedingDialog = $("feeding-dialog");
+
+const openFeedingEdit = (f) => {
+  editingFeedingId = f.id;
+  $("feeding-edit-at").value = toLocalInput(f.at);
+  $("feeding-edit-amount").value = f.amount_ml;
+  feedingDialog.showModal();
+};
+
+$("feeding-edit-cancel").addEventListener("click", () => feedingDialog.close());
+
+$("feeding-edit-save").addEventListener("click", async (ev) => {
+  ev.preventDefault();
+  try {
+    await api(`/api/feedings/${editingFeedingId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        at: fromLocalInput($("feeding-edit-at").value),
+        amount_ml: Math.max(0, Math.round(Number($("feeding-edit-amount").value) || 0)),
+      }),
+    });
+    feedingDialog.close();
+    await refresh();
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
+$("feeding-edit-delete").addEventListener("click", async () => {
+  if (!confirm("Удалить запись?")) return;
+  try {
+    await api(`/api/feedings/${editingFeedingId}`, { method: "DELETE" });
+    feedingDialog.close();
+    await refresh();
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
 // ---------- boot ----------
 const refresh = async () => {
-  [entries, active] = await Promise.all([api("/api/entries"), api("/api/active")]);
+  [entries, active, feedings] = await Promise.all([
+    api("/api/entries"),
+    api("/api/active"),
+    api("/api/feedings"),
+  ]);
   renderTimer();
   tick();
   renderJournal();
+  prefillFeedingForm();
+  renderFeedingJournal();
 };
 
 refresh();

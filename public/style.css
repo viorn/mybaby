@@ -23,6 +23,30 @@ main {
   padding: 24px 16px 64px;
 }
 
+/* ---- Вкладки ---- */
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.tab-btn {
+  flex: 1;
+  font: inherit;
+  font-size: 1rem;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--muted);
+  cursor: pointer;
+}
+.tab-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
 h1 { font-size: 1.4rem; font-weight: 600; }
 h2 { font-size: 1.05rem; font-weight: 600; }
 
@@ -136,6 +160,38 @@ h2 { font-size: 1.05rem; font-weight: 600; }
 }
 
 .empty { color: var(--muted); text-align: center; padding: 24px 0; }
+
+/* ---- Питание ---- */
+.feeding-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+  text-align: left;
+}
+.feeding-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.feeding-hint {
+  margin-top: 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.feeding-day-total {
+  color: var(--accent);
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-left: 8px;
+}
+.entry .entry-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
 
 /* ---- Формы ---- */
 .edit-form, dialog {
