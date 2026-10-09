@@ -85,8 +85,8 @@ h2 { font-size: 1.05rem; font-weight: 600; }
 .timer-btn:hover { opacity: 0.85; }
 .timer-btn.stop { background: var(--danger); }
 
-#timer-note-wrap { margin-top: 14px; }
-#timer-note {
+#timer-note-wrap, #home-note-wrap { margin-top: 14px; }
+#timer-note, #home-note {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--border);

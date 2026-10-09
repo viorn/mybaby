@@ -79,8 +79,9 @@ const renderTimer = () => {
     }
   }
 
-  const noteWrap = $("timer-note-wrap");
-  noteWrap.classList.toggle("hidden", !!active);
+  for (const id of ["timer-note-wrap", "home-note-wrap"]) {
+    $(id).classList.toggle("hidden", !!active);
+  }
 };
 
 const tick = () => {
@@ -128,8 +129,9 @@ const toggleSleep = async () => {
     if (active) {
       await api("/api/timer/stop", { method: "POST" });
     } else {
-      const note = $("timer-note").value.trim();
+      const note = ($("home-note").value.trim() || $("timer-note").value.trim());
       await api("/api/timer/start", { method: "POST", body: JSON.stringify({ note }) });
+      $("home-note").value = "";
       $("timer-note").value = "";
     }
     await refresh();
