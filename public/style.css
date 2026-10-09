@@ -180,18 +180,6 @@ h2 { font-size: 1.05rem; font-weight: 600; }
   color: var(--muted);
 }
 
-.time-row { display: flex; gap: 6px; }
-.time-row input { flex: 1; min-width: 0; }
-.now-btn {
-  font: inherit;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-  cursor: pointer;
-  white-space: nowrap;
-}
-.now-btn:hover { border-color: var(--accent); }
 .feeding-hint {
   margin-top: 12px;
   font-size: 0.8rem;

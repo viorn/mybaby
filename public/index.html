@@ -45,18 +45,14 @@
       <!-- Быстрое кормление -->
       <section class="timer">
         <h2>🍼 Кормление</h2>
+        <div id="home-feeding-last" class="last-sleep hidden"></div>
         <div class="feeding-form">
-          <label>Закончило есть
-            <div class="time-row">
-              <input id="home-feeding-at" type="datetime-local" />
-              <button type="button" id="home-feeding-now" class="now-btn">⏱</button>
-            </div>
-          </label>
           <label>Объём, мл
             <input id="home-feeding-amount" type="number" inputmode="numeric" min="0" step="5" value="60" />
           </label>
           <button id="home-feeding-save" class="timer-btn">Записать</button>
         </div>
+        <div class="feeding-hint">Время — сейчас, объём подтягивается из последней записи</div>
       </section>
 
       <!-- Действия -->
@@ -106,27 +102,20 @@
 
     <!-- ==================== ПИТАНИЕ ==================== -->
     <div id="tab-feeding" class="hidden">
-      <!-- Быстрая запись -->
-      <section class="timer">
-        <h2>Кормление</h2>
-        <div class="feeding-form">
-          <label>Закончило есть
-            <div class="time-row">
-              <input id="feeding-at" type="datetime-local" />
-              <button type="button" id="feeding-now" class="now-btn">⏱</button>
-            </div>
-          </label>
-          <label>Объём, мл
-            <input id="feeding-amount" type="number" inputmode="numeric" min="0" step="5" value="60" />
-          </label>
-          <button id="feeding-save" class="timer-btn">Записать</button>
-        </div>
-        <div class="feeding-hint">Объём подтягивается из последней записи</div>
-      </section>
-
       <!-- Журнал питания -->
       <section>
-        <div class="journal-head"><h2>Журнал питания</h2></div>
+        <div class="journal-head">
+          <h2>Журнал</h2>
+          <button id="feeding-add-btn" class="ghost-btn">+ Добавить вручную</button>
+        </div>
+        <div id="feeding-add-form" class="edit-form hidden">
+          <label>Время <input id="feeding-add-at" type="datetime-local" /></label>
+          <label>Объём, мл <input id="feeding-add-amount" type="number" inputmode="numeric" min="0" step="5" value="60" /></label>
+          <div class="form-actions">
+            <button id="feeding-add-save">Сохранить</button>
+            <button id="feeding-add-cancel" class="ghost-btn">Отмена</button>
+          </div>
+        </div>
         <ul id="feeding-journal"></ul>
       </section>
     </div>

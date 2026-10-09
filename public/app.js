@@ -84,7 +84,6 @@ const renderTimer = () => {
 };
 
 const tick = () => {
-  refreshUntouchedFeedingTime();
   const now = Date.now();
   if (active) {
     const ms = fmtClock(now - new Date(active.started_at));
@@ -309,27 +308,27 @@ const renderFeedingJournal = () => {
     return;
   }
 
+  // Итоги по дням считаем заранее
+  const totals = new Map();
+  for (const f of feedings) {
+    const key = new Date(f.at).toDateString();
+    totals.set(key, (totals.get(key) || 0) + f.amount_ml);
+  }
+
   let lastDay = null;
-  let dayTotal = 0;
   for (const f of feedings) {
     const at = new Date(f.at);
     const dayKey = at.toDateString();
 
     if (dayKey !== lastDay) {
-      if (lastDay !== null) {
-        const total = document.createElement("li");
-        total.className = "day-label";
-        total.innerHTML = `Итого за день: <span class="feeding-day-total">${dayTotal} мл</span>`;
-        list.appendChild(total);
-      }
       lastDay = dayKey;
-      dayTotal = 0;
       const li = document.createElement("li");
       li.className = "day-label";
-      li.textContent = dayName(at);
+      li.innerHTML =
+        `${escapeHtml(dayName(at))} ` +
+        `<span class="feeding-day-total">(${totals.get(dayKey)} мл)</span>`;
       list.appendChild(li);
     }
-    dayTotal += f.amount_ml;
 
     const li = document.createElement("li");
     li.className = "entry";
@@ -342,83 +341,69 @@ const renderFeedingJournal = () => {
     li.addEventListener("click", () => openFeedingEdit(f));
     list.appendChild(li);
   }
-
-  const total = document.createElement("li");
-  total.className = "day-label";
-  total.innerHTML = `Итого за день: <span class="feeding-day-total">${dayTotal} мл</span>`;
-  list.appendChild(total);
 };
-
-const FEEDING_FORMS = [
-  ["feeding-at", "feeding-amount"],
-  ["home-feeding-at", "home-feeding-amount"],
-];
-
-const isDirty = (el) => el.dataset.dirty === "1";
-
-// Поля времени: помечаем как «изменённое пользователем», чтобы не перезаписывать
-for (const [atId] of FEEDING_FORMS) {
-  $(atId).addEventListener("input", (e) => {
-    e.target.dataset.dirty = "1";
-  });
-}
-
-const setFeedingNow = (atId) => {
-  const el = $(atId);
-  el.value = toLocalInput(new Date().toISOString());
-  delete el.dataset.dirty;
-};
-
-$("feeding-now").addEventListener("click", () => setFeedingNow("feeding-at"));
-$("home-feeding-now").addEventListener("click", () => setFeedingNow("home-feeding-at"));
 
 const prefillFeedingForm = () => {
   const saved = Number(localStorage.getItem(AMOUNT_KEY));
   const lastServer = feedings[0]?.amount_ml;
   const amount = saved || lastServer || 60;
-  for (const [atId, amountId] of FEEDING_FORMS) {
-    const at = $(atId);
-    at.value = toLocalInput(new Date().toISOString());
-    delete at.dataset.dirty;
-    $(amountId).value = amount;
-  }
+  $("home-feeding-amount").value = amount;
+  $("feeding-add-amount").value = amount;
 };
 
-// Раз в минуту подтягиваем «нетронутые» поля времени к текущему времени
-let lastTickMinute = new Date().getMinutes();
-
-const refreshUntouchedFeedingTime = () => {
-  const m = new Date().getMinutes();
-  if (m === lastTickMinute) return;
-  lastTickMinute = m;
-  for (const [atId] of FEEDING_FORMS) {
-    const el = $(atId);
-    if (!isDirty(el)) el.value = toLocalInput(new Date().toISOString());
+// Последнее кормление — статус в виджете на главной
+const renderLastFeeding = () => {
+  const el = $("home-feeding-last");
+  const last = feedings[0];
+  if (!last) {
+    el.classList.add("hidden");
+    return;
   }
+  const at = new Date(last.at);
+  const dayStr =
+    at.toDateString() === new Date().toDateString() ? "" : at.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) + " ";
+  el.textContent = `Последнее кормление: ${dayStr}${at.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} · ${last.amount_ml} мл`;
+  el.classList.remove("hidden");
 };
 
-const saveFeeding = async (atId, amountId) => {
-  const amount = Math.max(0, Math.round(Number($(amountId).value) || 0));
-  // Если время не трогали вручную — фиксируем текущий момент
-  const atIso = isDirty($(atId))
-    ? fromLocalInput($(atId).value)
-    : new Date().toISOString();
+// Запись «сейчас» с главной
+$("home-feeding-save").addEventListener("click", async () => {
+  const amount = Math.max(0, Math.round(Number($("home-feeding-amount").value) || 0));
   try {
     await api("/api/feedings", {
       method: "POST",
-      body: JSON.stringify({ at: atIso, amount_ml: amount }),
+      body: JSON.stringify({ at: new Date().toISOString(), amount_ml: amount }),
     });
     localStorage.setItem(AMOUNT_KEY, String(amount));
     await refresh();
   } catch (e) {
     alert(e.message);
   }
-};
+});
 
-$("feeding-save").addEventListener("click", () => saveFeeding("feeding-at", "feeding-amount"));
-$("home-feeding-save").addEventListener("click", () =>
-  saveFeeding("home-feeding-at", "home-feeding-amount")
-);
+// ---------- добавление кормления вручную ----------
+$("feeding-add-btn").addEventListener("click", () => {
+  $("feeding-add-form").classList.toggle("hidden");
+  $("feeding-add-at").value = toLocalInput(new Date().toISOString());
+});
+
+$("feeding-add-cancel").addEventListener("click", () => $("feeding-add-form").classList.add("hidden"));
+
+$("feeding-add-save").addEventListener("click", async () => {
+  if (!$("feeding-add-at").value) return alert("Укажите время");
+  const amount = Math.max(0, Math.round(Number($("feeding-add-amount").value) || 0));
+  try {
+    await api("/api/feedings", {
+      method: "POST",
+      body: JSON.stringify({ at: fromLocalInput($("feeding-add-at").value), amount_ml: amount }),
+    });
+    localStorage.setItem(AMOUNT_KEY, String(amount));
+    $("feeding-add-form").classList.add("hidden");
+    await refresh();
+  } catch (e) {
+    alert(e.message);
+  }
+});
 
 // ---------- диалог кормления ----------
 const feedingDialog = $("feeding-dialog");
@@ -583,6 +568,7 @@ const refresh = async () => {
   renderJournal();
   prefillFeedingForm();
   renderFeedingJournal();
+  renderLastFeeding();
   renderDay();
 };
 
