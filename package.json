@@ -1,0 +1,12 @@
+{
+  "name": "mybaby-sleep",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run src/server.ts",
+    "build": "bun build --compile src/server.ts --outfile mybaby"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.2"
+  }
+}

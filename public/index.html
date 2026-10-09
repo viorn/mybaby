@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Сон малыша</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>%F0%9F%8C%99</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <h1>🌙 Сон</h1>
+
+    <!-- Таймер -->
+    <section class="timer">
+      <div id="timer-status" class="timer-status">Не спит</div>
+      <div id="timer-elapsed" class="timer-elapsed hidden">00:00</div>
+      <button id="timer-btn" class="timer-btn">Начать сон</button>
+      <div id="timer-note-wrap" class="hidden">
+        <input id="timer-note" type="text" placeholder="Заметка (необязательно)" />
+      </div>
+    </section>
+
+    <!-- Экспорт -->
+    <section class="export">
+      <h2>Экспорт</h2>
+      <div class="export-row">
+        <label>c <input id="export-from" type="date" /></label>
+        <label>по <input id="export-to" type="date" /></label>
+        <button id="export-csv" class="export-btn">CSV</button>
+        <button id="export-json" class="export-btn">JSON</button>
+      </div>
+    </section>
+
+    <!-- Журнал -->
+    <section>
+      <div class="journal-head">
+        <h2>Журнал</h2>
+        <button id="add-btn" class="ghost-btn">+ Добавить вручную</button>
+      </div>
+      <div id="add-form" class="edit-form hidden">
+        <label>Начало <input id="add-start" type="datetime-local" /></label>
+        <label>Конец <input id="add-end" type="datetime-local" /></label>
+        <label>Заметка <input id="add-note" type="text" placeholder="Необязательно" /></label>
+        <div class="form-actions">
+          <button id="add-save">Сохранить</button>
+          <button id="add-cancel" class="ghost-btn">Отмена</button>
+        </div>
+      </div>
+      <ul id="journal"></ul>
+    </section>
+  </main>
+
+  <dialog id="edit-dialog">
+    <form id="edit-form" method="dialog">
+      <h3>Редактировать</h3>
+      <label>Начало <input id="edit-start" type="datetime-local" required /></label>
+      <label>Конец <input id="edit-end" type="datetime-local" /></label>
+      <label>Заметка <input id="edit-note" type="text" /></label>
+      <div class="form-actions">
+        <button type="submit" id="edit-save">Сохранить</button>
+        <button type="button" id="edit-delete" class="danger">Удалить</button>
+        <button type="button" id="edit-cancel" class="ghost-btn">Отмена</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

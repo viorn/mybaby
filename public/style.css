@@ -1,0 +1,194 @@
+:root {
+  --bg: #fafaf8;
+  --fg: #2d2d2d;
+  --muted: #8a8a85;
+  --accent: #6b7fd7;
+  --accent-soft: #eef0fa;
+  --danger: #c96a6a;
+  --border: #e4e4e0;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+main {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+}
+
+h1 { font-size: 1.4rem; font-weight: 600; }
+h2 { font-size: 1.05rem; font-weight: 600; }
+
+/* ---- Таймер ---- */
+.timer {
+  margin: 20px 0 32px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.timer-status { color: var(--muted); font-size: 0.95rem; }
+.timer-status.active { color: var(--accent); font-weight: 600; }
+
+.timer-elapsed {
+  font-size: 2.6rem;
+  font-variant-numeric: tabular-nums;
+  margin: 8px 0 16px;
+}
+
+.timer-btn {
+  font-size: 1rem;
+  padding: 12px 32px;
+  border: none;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.timer-btn:hover { opacity: 0.85; }
+.timer-btn.stop { background: var(--danger); }
+
+#timer-note-wrap { margin-top: 14px; }
+#timer-note {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font: inherit;
+}
+
+/* ---- Экспорт ---- */
+.export { margin-bottom: 24px; }
+.export h2 { margin-bottom: 10px; }
+.export-row { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
+.export-row label { font-size: 0.85rem; color: var(--muted); }
+.export-btn {
+  font: inherit;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.export-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+/* ---- Журнал ---- */
+.journal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ghost-btn {
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+  padding: 4px;
+}
+
+#journal { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+}
+.entry:hover { border-color: var(--accent); }
+
+.entry-main { flex: 1; min-width: 0; }
+.entry-time { font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+.entry-note {
+  color: var(--muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.entry-duration {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.entry.active .entry-duration { color: var(--accent); }
+.day-label {
+  margin: 16px 0 6px;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.empty { color: var(--muted); text-align: center; padding: 24px 0; }
+
+/* ---- Формы ---- */
+.edit-form, dialog {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.edit-form {
+  padding: 14px;
+  margin-bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edit-form label, dialog label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--fg);
+}
+input:focus { outline: none; border-color: var(--accent); }
+
+.form-actions { display: flex; gap: 8px; margin-top: 4px; }
+.form-actions button {
+  font: inherit;
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+.form-actions button:hover { border-color: var(--accent); }
+.form-actions .danger { color: var(--danger); }
+.form-actions .ghost-btn { border-color: transparent; }
+
+dialog {
+  border: none;
+  padding: 20px;
+  width: min(420px, 92vw);
+}
+dialog::backdrop { background: rgba(0, 0, 0, 0.3); }
+dialog form { display: flex; flex-direction: column; gap: 10px; }
+dialog h3 { margin-bottom: 4px; font-size: 1rem; }
+
+.hidden { display: none !important; }
