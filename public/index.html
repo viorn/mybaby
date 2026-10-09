@@ -41,6 +41,10 @@
 
       <!-- Действия -->
       <section class="home-actions">
+        <div class="export-row home-export-dates">
+          <label>c <input id="home-export-from" type="date" /></label>
+          <label>по <input id="home-export-to" type="date" /></label>
+        </div>
         <button id="home-export-csv" class="action-btn">📤 Экспорт CSV</button>
         <button id="home-export-json" class="action-btn">📤 Экспорт JSON</button>
         <button id="home-import-btn" class="action-btn">📥 Импорт JSON</button>
@@ -62,25 +66,11 @@
         </div>
       </section>
 
-      <!-- Экспорт -->
-      <section class="export">
-        <h2>Экспорт</h2>
-        <div class="export-row">
-          <label>c <input id="export-from" type="date" /></label>
-          <label>по <input id="export-to" type="date" /></label>
-          <button id="export-csv" class="export-btn">CSV</button>
-          <button id="export-json" class="export-btn">JSON</button>
-        </div>
-      </section>
-
       <!-- Журнал сна -->
       <section>
         <div class="journal-head">
           <h2>Журнал</h2>
-          <div>
-            <button id="day-btn" class="ghost-btn" title="Визуализация дня">📊 День</button>
-            <button id="add-btn" class="ghost-btn">+ Добавить вручную</button>
-          </div>
+          <button id="add-btn" class="ghost-btn">+ Добавить вручную</button>
         </div>
         <div id="add-form" class="edit-form hidden">
           <label>Начало <input id="add-start" type="datetime-local" /></label>

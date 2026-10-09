@@ -211,19 +211,14 @@ $("add-save").addEventListener("click", async () => {
 });
 
 // ---------- export ----------
-const exportData = (format, withDates = true) => {
+const exportData = (format) => {
   const params = new URLSearchParams({ format });
-  if (withDates) {
-    const from = $("export-from").value;
-    const to = $("export-to").value;
-    if (from) params.set("from", from);
-    if (to) params.set("to", to);
-  }
+  const from = $("home-export-from").value;
+  const to = $("home-export-to").value;
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
   window.location.href = `/api/export?${params}`;
 };
-
-$("export-csv").addEventListener("click", () => exportData("csv"));
-$("export-json").addEventListener("click", () => exportData("json"));
 
 // ---------- edit dialog ----------
 const dialog = $("edit-dialog");
@@ -459,14 +454,13 @@ const openDay = () => {
   dayDialog.showModal();
 };
 
-$("day-btn").addEventListener("click", openDay);
 $("day-close").addEventListener("click", () => dayDialog.close());
 $("day-date").addEventListener("change", renderDay);
 
 // ---------- главная: действия ----------
 $("home-day-btn").addEventListener("click", openDay);
-$("home-export-csv").addEventListener("click", () => exportData("csv", false));
-$("home-export-json").addEventListener("click", () => exportData("json", false));
+$("home-export-csv").addEventListener("click", () => exportData("csv"));
+$("home-export-json").addEventListener("click", () => exportData("json"));
 
 const importJson = async (file) => {
   const data = JSON.parse(await file.text());

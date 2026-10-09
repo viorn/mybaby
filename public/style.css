@@ -94,9 +94,9 @@ h2 { font-size: 1.05rem; font-weight: 600; }
 }
 
 /* ---- Экспорт ---- */
-.export { margin-bottom: 24px; }
-.export h2 { margin-bottom: 10px; }
 .export-row { display: flex; align-items: end; gap: 8px; flex-wrap: wrap; }
+.home-export-dates { grid-column: 1 / -1; }
+.home-export-dates label { flex: 1; }
 .export-row label { font-size: 0.85rem; color: var(--muted); }
 .export-btn {
   font: inherit;
