@@ -102,6 +102,19 @@
 
     <!-- ==================== ПИТАНИЕ ==================== -->
     <div id="tab-feeding" class="hidden">
+      <!-- Быстрое кормление -->
+      <section class="timer">
+        <h2>🍼 Кормление</h2>
+        <div id="tab-feeding-last" class="last-sleep hidden"></div>
+        <div class="feeding-form">
+          <label>Объём, мл
+            <input id="tab-feeding-amount" type="number" inputmode="numeric" min="0" step="5" value="60" />
+          </label>
+          <button id="tab-feeding-save" class="timer-btn">Записать</button>
+        </div>
+        <div class="feeding-hint">Время — сейчас, объём подтягивается из последней записи</div>
+      </section>
+
       <!-- Журнал питания -->
       <section>
         <div class="journal-head">

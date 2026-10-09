@@ -361,32 +361,39 @@ const renderFeedingJournal = () => {
   }
 };
 
+const FEEDING_AMOUNT_IDS = ["home-feeding-amount", "tab-feeding-amount"];
+const FEEDING_LAST_IDS = ["home-feeding-last", "tab-feeding-last"];
+
 const prefillFeedingForm = () => {
   const saved = Number(localStorage.getItem(AMOUNT_KEY));
   const lastServer = feedings[0]?.amount_ml;
   const amount = saved || lastServer || 60;
-  $("home-feeding-amount").value = amount;
+  for (const id of FEEDING_AMOUNT_IDS) $(id).value = amount;
   $("feeding-add-amount").value = amount;
 };
 
-// Последнее кормление — статус в виджете на главной
+// Последнее кормление — статус в виджетах
 const renderLastFeeding = () => {
-  const el = $("home-feeding-last");
   const last = feedings[0];
-  if (!last) {
-    el.classList.add("hidden");
-    return;
+  let text = null;
+  if (last) {
+    const at = new Date(last.at);
+    const dayStr =
+      at.toDateString() === new Date().toDateString()
+        ? ""
+        : at.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) + " ";
+    text = `Последнее кормление: ${dayStr}${at.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} · ${last.amount_ml} мл`;
   }
-  const at = new Date(last.at);
-  const dayStr =
-    at.toDateString() === new Date().toDateString() ? "" : at.toLocaleDateString("ru-RU", { day: "numeric", month: "short" }) + " ";
-  el.textContent = `Последнее кормление: ${dayStr}${at.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} · ${last.amount_ml} мл`;
-  el.classList.remove("hidden");
+  for (const id of FEEDING_LAST_IDS) {
+    const el = $(id);
+    el.classList.toggle("hidden", !text);
+    if (text) el.textContent = text;
+  }
 };
 
-// Запись «сейчас» с главной
-$("home-feeding-save").addEventListener("click", async () => {
-  const amount = Math.max(0, Math.round(Number($("home-feeding-amount").value) || 0));
+// Запись «сейчас» (кнопки на главной и на вкладке питания)
+const saveFeedingNow = async (amountId) => {
+  const amount = Math.max(0, Math.round(Number($(amountId).value) || 0));
   try {
     await api("/api/feedings", {
       method: "POST",
@@ -397,7 +404,10 @@ $("home-feeding-save").addEventListener("click", async () => {
   } catch (e) {
     alert(e.message);
   }
-});
+};
+
+$("home-feeding-save").addEventListener("click", () => saveFeedingNow("home-feeding-amount"));
+$("tab-feeding-save").addEventListener("click", () => saveFeedingNow("tab-feeding-amount"));
 
 // ---------- добавление кормления вручную ----------
 $("feeding-add-btn").addEventListener("click", () => {
