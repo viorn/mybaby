@@ -18,6 +18,7 @@ mkdir -p \
   "${TREE}/DEBIAN" \
   "${TREE}/usr/bin" \
   "${TREE}/lib/systemd/system" \
+  "${TREE}/etc/mybaby" \
   "${TREE}/var/lib/mybaby"
 
 cp mybaby "${TREE}/usr/bin/mybaby"
@@ -31,6 +32,14 @@ for f in postinst prerm postrm; do
 done
 
 cp packaging/mybaby.service "${TREE}/lib/systemd/system/mybaby.service"
+cp packaging/mybaby.env "${TREE}/etc/mybaby/mybaby.env"
+chmod 644 "${TREE}/etc/mybaby/mybaby.env"
+
+# conffiles: dpkg сохраняет пользовательские правки при обновлении пакета
+cat > "${TREE}/DEBIAN/conffiles" <<EOF
+/lib/systemd/system/mybaby.service
+/etc/mybaby/mybaby.env
+EOF
 
 echo "==> dpkg-deb"
 mkdir -p dist

@@ -7,8 +7,7 @@ Type=simple
 User=mybaby
 Group=mybaby
 WorkingDirectory=/var/lib/mybaby
-Environment=HOST=0.0.0.0
-Environment=PORT=8080
+EnvironmentFile=/etc/mybaby/mybaby.env
 ExecStart=/usr/bin/mybaby
 Restart=on-failure
 RestartSec=3
