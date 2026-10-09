@@ -61,7 +61,13 @@ h2 { font-size: 1.05rem; font-weight: 600; }
 }
 
 .timer-status { color: var(--muted); font-size: 0.95rem; }
-.timer-status.active { color: var(--accent); font-weight: 600; }
+.timer-status.active {
+  color: var(--accent);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+}
 
 .last-sleep { color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
 
@@ -322,6 +328,82 @@ dialog h3 { margin-bottom: 4px; font-size: 1rem; }
   flex-wrap: wrap;
 }
 .day-stats b { color: var(--accent); }
+
+/* ---- Обзор недели ---- */
+.week-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.week-head h2 { font-variant-numeric: tabular-nums; }
+.week-head .ghost-btn { font-size: 1.1rem; padding: 4px 12px; }
+.week-head .ghost-btn:disabled { color: var(--border); cursor: default; }
+
+.week-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 140px;
+  margin: 8px 0 2px;
+}
+.wc-col {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.wc-val {
+  font-size: 0.65rem;
+  color: var(--muted);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.wc-bar {
+  width: 100%;
+  max-width: 34px;
+  background: var(--accent);
+  opacity: 0.75;
+  border-radius: 4px 4px 0 0;
+}
+.wc-day { font-size: 0.7rem; color: var(--muted); }
+.wc-col.today .wc-day { color: var(--accent); font-weight: 600; }
+.wc-col.future { opacity: 0.35; }
+
+.week-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+  margin: 10px 0 4px;
+}
+.week-table th,
+.week-table td {
+  padding: 6px 4px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  border-bottom: 1px solid var(--border);
+}
+.week-table th:first-child,
+.week-table td:first-child { text-align: left; }
+.week-table th {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+.week-table tbody tr { cursor: pointer; }
+.week-table tbody tr:hover { background: var(--accent-soft); }
+.week-table tr.today-row td:first-child { color: var(--accent); font-weight: 600; }
+.week-table tr.future { opacity: 0.35; }
+
+.week-summary {
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+}
 
 /* ---- Главная: действия ---- */
 .home-actions {

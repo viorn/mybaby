@@ -60,6 +60,7 @@ const renderTimer = () => {
       const started = new Date(active.started_at);
       status.textContent = `😴 Спит с ${started.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
       status.classList.add("active");
+      status.title = "Нажмите, чтобы изменить время старта";
       elapsed.classList.remove("hidden", "awake");
       elapsed.textContent = fmtClock(Date.now() - started);
       btn.textContent = "Разбудить";
@@ -67,6 +68,7 @@ const renderTimer = () => {
     } else {
       status.textContent = "🙂 Не спит";
       status.classList.remove("active");
+      status.removeAttribute("title");
       btn.textContent = "Начать сон";
       btn.classList.remove("stop");
       const lastEnded = lastEndedAt();
@@ -155,6 +157,33 @@ const toggleSleep = async () => {
 $("timer-btn").addEventListener("click", toggleSleep);
 $("home-sleep-btn").addEventListener("click", toggleSleep);
 
+// Клик по статусу активного сна — правка времени старта (диалог редактирования)
+for (const id of ["timer-status", "home-status"]) {
+  $(id).addEventListener("click", () => {
+    if (active) openEdit(active);
+  });
+}
+
+// Сон по календарным суткам: пересечение интервалов сна с каждым днём.
+// Ночной сон через полночь делится между сутками; активный сон считается до «сейчас».
+const sleepMsByDay = (fromTs = -Infinity, toTs = Infinity) => {
+  const totals = new Map();
+  for (const e of entries) {
+    let s = Math.max(new Date(e.started_at).getTime(), fromTs);
+    const en = Math.min(e.ended_at ? new Date(e.ended_at).getTime() : Date.now(), toTs);
+    if (s >= en) continue;
+    while (s < en) {
+      const d = new Date(s);
+      const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
+      const seg = Math.min(en, dayEnd) - s;
+      const key = d.toDateString();
+      totals.set(key, (totals.get(key) || 0) + seg);
+      s = dayEnd;
+    }
+  }
+  return totals;
+};
+
 // ---------- journal ----------
 const renderJournal = () => {
   const list = $("journal");
@@ -165,21 +194,8 @@ const renderJournal = () => {
     return;
   }
 
-  // Итог сна за каждый день: пересечение интервалов сна с календарными сутками
-  // (ночной сон через полночь делится между днями)
-  const dayTotals = new Map();
-  for (const e of entries) {
-    let s = new Date(e.started_at).getTime();
-    const en = e.ended_at ? new Date(e.ended_at).getTime() : Date.now();
-    while (s < en) {
-      const d = new Date(s);
-      const dayEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1).getTime();
-      const seg = Math.min(en, dayEnd) - s;
-      const key = d.toDateString();
-      dayTotals.set(key, (dayTotals.get(key) || 0) + seg);
-      s = dayEnd;
-    }
-  }
+  // Итог сна за каждый день (ночной сон через полночь делится между днями)
+  const dayTotals = sleepMsByDay();
 
   let lastDay = null;
   for (const e of entries) {
@@ -225,7 +241,7 @@ const escapeHtml = (s) => s.replace(/[\u0026<>"']/g, (c) => HTML_ESCAPES[c]);
 
 // ---------- вкладки ----------
 const TAB_KEY = "mybaby:tab";
-const TABS = ["home", "sleep", "feeding"];
+const TABS = ["home", "sleep", "feeding", "week"];
 
 const showTab = (name) => {
   if (!TABS.includes(name)) name = "home";
@@ -591,6 +607,127 @@ window.addEventListener("resize", () => {
   resizeTimer = setTimeout(renderDay, 200);
 });
 
+// ---------- обзор недели ----------
+let weekOffset = 0; // 0 = текущая неделя
+const WEEKDAYS = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"];
+
+// Полночь понедельника выбранной недели (неделя начинается с понедельника)
+const startOfWeek = (offset) => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + offset * 7);
+  return d;
+};
+
+// Компактный формат часов для подписи над столбцом: «8,5 ч» / «11 ч»
+const fmtHoursShort = (ms) => {
+  const h = ms / 3600000;
+  return `${(h >= 10 ? Math.round(h) : Math.round(h * 10) / 10).toLocaleString("ru-RU")} ч`;
+};
+
+const renderWeek = () => {
+  const ws = startOfWeek(weekOffset);
+  const we = new Date(ws);
+  we.setDate(we.getDate() + 7);
+  const wsT = ws.getTime();
+  const weT = we.getTime();
+  const now = Date.now();
+  const fmtShort = (d) => d.toLocaleDateString("ru-RU", { day: "numeric", month: "short" });
+
+  $("week-label").textContent = `${fmtShort(ws)} — ${fmtShort(new Date(weT - 1))}`;
+  $("week-next").disabled = weekOffset >= 0;
+
+  // --- агрегация по дням недели ---
+  const sleepByDay = sleepMsByDay(wsT, weT);
+  const feedByDay = new Map(); // toDateString -> { count, ml }
+  for (const f of feedings) {
+    const t = new Date(f.at).getTime();
+    if (t < wsT || t >= weT) continue;
+    const key = new Date(t).toDateString();
+    const cur = feedByDay.get(key) || { count: 0, ml: 0 };
+    cur.count += 1;
+    cur.ml += f.amount_ml;
+    feedByDay.set(key, cur);
+  }
+
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(ws);
+    d.setDate(d.getDate() + i);
+    return d;
+  });
+  const todayKey = new Date().toDateString();
+
+  // --- график: 7 столбцов, высота ∝ часам сна ---
+  const maxMs = Math.max(...days.map((d) => sleepByDay.get(d.toDateString()) || 0), 3600000);
+  const chart = $("week-chart");
+  chart.innerHTML = "";
+  for (const d of days) {
+    const key = d.toDateString();
+    const ms = sleepByDay.get(key) || 0;
+    const isFuture = d.getTime() > now;
+    const h = ms > 0 ? Math.max(6, Math.round((ms / maxMs) * 100)) : 0;
+    const col = document.createElement("div");
+    col.className = "wc-col" + (key === todayKey ? " today" : "") + (isFuture ? " future" : "");
+    col.innerHTML = `
+      <span class="wc-val">${ms ? fmtHoursShort(ms) : ""}</span>
+      <div class="wc-bar" style="height:${h}%"></div>
+      <span class="wc-day">${WEEKDAYS[(d.getDay() + 6) % 7]}</span>
+    `;
+    chart.appendChild(col);
+  }
+
+  // --- таблица по дням; клик — «Обзор дня» за эту дату ---
+  const table = $("week-table");
+  table.innerHTML =
+    "<thead><tr><th>День</th><th>😴 Сон</th><th>🍼 Кол-во</th><th>Объём</th></tr></thead>";
+  const tbody = document.createElement("tbody");
+  for (const d of days) {
+    const key = d.toDateString();
+    const ms = sleepByDay.get(key) || 0;
+    const fd = feedByDay.get(key);
+    const isFuture = d.getTime() > now;
+    const tr = document.createElement("tr");
+    tr.className = (key === todayKey ? "today-row" : "") + (isFuture ? " future" : "");
+    tr.innerHTML = `
+      <td>${fmtShort(d)}</td>
+      <td>${ms ? fmtDuration(ms) : "—"}</td>
+      <td>${fd ? fd.count : "—"}</td>
+      <td>${fd ? fd.ml + " мл" : "—"}</td>
+    `;
+    tr.addEventListener("click", () => {
+      $("home-day-date").value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      renderDay();
+      showTab("home");
+    });
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+
+  // --- сводка ---
+  const totalSleep = [...sleepByDay.values()].reduce((a, b) => a + b, 0);
+  const totalFeed = [...feedByDay.values()].reduce(
+    (a, b) => ({ count: a.count + b.count, ml: a.ml + b.ml }),
+    { count: 0, ml: 0 }
+  );
+  // Средние считаем только по прошедшим дням недели
+  const countedDays = Math.max(1, days.filter((d) => d.getTime() <= now).length);
+  const avgFeedMl = totalFeed.count ? Math.round(totalFeed.ml / totalFeed.count) : 0;
+  $("week-summary").innerHTML = `
+    <span>😴 Сон: <b>${fmtDuration(totalSleep)}</b> · ${fmtDuration(totalSleep / countedDays)}/сут</span>
+    <span>🍼 Кормлений: <b>${totalFeed.count}</b> · ${(totalFeed.count / countedDays).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}/сут</span>
+    <span>🥛 Объём: <b>${totalFeed.ml} мл</b> · среднее ${avgFeedMl} мл</span>
+  `;
+};
+
+$("week-prev").addEventListener("click", () => {
+  weekOffset -= 1;
+  renderWeek();
+});
+$("week-next").addEventListener("click", () => {
+  weekOffset += 1;
+  renderWeek();
+});
+
 // ---------- главная: действия ----------
 $("home-export-csv").addEventListener("click", () => exportData("csv"));
 $("home-export-json").addEventListener("click", () => exportData("json"));
@@ -656,6 +793,7 @@ const refresh = async () => {
   renderFeedingJournal();
   renderLastFeeding();
   renderDay();
+  renderWeek();
   refreshOpenFormTimes();
 };
 

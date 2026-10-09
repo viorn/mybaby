@@ -13,6 +13,7 @@
       <button class="tab-btn active" data-tab="home">🏠 Главная</button>
       <button class="tab-btn" data-tab="sleep">🌙 Сон</button>
       <button class="tab-btn" data-tab="feeding">🍼 Питание</button>
+      <button class="tab-btn" data-tab="week">📊 Неделя</button>
     </nav>
 
     <!-- ==================== ГЛАВНАЯ ==================== -->
@@ -133,6 +134,20 @@
           </div>
         </div>
         <ul id="feeding-journal"></ul>
+      </section>
+    </div>
+
+    <!-- ==================== НЕДЕЛЯ ==================== -->
+    <div id="tab-week" class="hidden">
+      <section class="timer">
+        <div class="week-head">
+          <button id="week-prev" class="ghost-btn" title="Предыдущая неделя">←</button>
+          <h2 id="week-label"></h2>
+          <button id="week-next" class="ghost-btn" title="Следующая неделя">→</button>
+        </div>
+        <div id="week-chart" class="week-chart"></div>
+        <table id="week-table" class="week-table"></table>
+        <div id="week-summary" class="day-stats week-summary"></div>
       </section>
     </div>
   </main>
