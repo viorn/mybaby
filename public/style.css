@@ -247,4 +247,72 @@ dialog::backdrop { background: rgba(0, 0, 0, 0.3); }
 dialog form { display: flex; flex-direction: column; gap: 10px; }
 dialog h3 { margin-bottom: 4px; font-size: 1rem; }
 
+/* ---- Визуализация дня ---- */
+.day-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.timeline-wrap { margin-bottom: 8px; }
+.timeline {
+  position: relative;
+  height: 40px;
+  background: #f1f1ee;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tl-sleep {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: var(--accent);
+  opacity: 0.75;
+}
+.tl-feed {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  margin-left: -2px;
+  background: #e0a458;
+  border-radius: 2px;
+}
+
+.timeline-hours {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 4px;
+  font-variant-numeric: tabular-nums;
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.legend i {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+.legend-sleep { background: var(--accent); opacity: 0.75; }
+.legend-feed { background: #e0a458; width: 4px; }
+
+.day-stats {
+  font-size: 0.95rem;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.day-stats b { color: var(--accent); }
+
 .hidden { display: none !important; }

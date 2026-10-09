@@ -353,6 +353,72 @@ $("feeding-edit-delete").addEventListener("click", async () => {
   }
 });
 
+// ---------- визуализация дня ----------
+const dayDialog = $("day-dialog");
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+const renderDay = () => {
+  const d = $("day-date").value;
+  if (!d) return;
+
+  const dayStart = new Date(`${d}T00:00:00`).getTime();
+  const dayEnd = dayStart + DAY_MS;
+  const now = Date.now();
+  const timeline = $("day-timeline");
+  timeline.innerHTML = "";
+
+  // Часы 0..24
+  $("day-hours").innerHTML = Array.from({ length: 25 }, (_, h) => `<span>${h}</span>`).join("");
+
+  // Сегменты сна (обрезаем по границам дня, включая сон с прошлых суток)
+  let sleepMs = 0;
+  for (const e of entries) {
+    const s = new Date(e.started_at).getTime();
+    const en = e.ended_at ? new Date(e.ended_at).getTime() : now;
+    const segStart = Math.max(s, dayStart);
+    const segEnd = Math.min(en, dayEnd, now);
+    if (segStart >= segEnd) continue;
+    sleepMs += segEnd - segStart;
+
+    const div = document.createElement("div");
+    div.className = "tl-sleep";
+    div.style.left = `${((segStart - dayStart) / DAY_MS) * 100}%`;
+    div.style.width = `${((segEnd - segStart) / DAY_MS) * 100}%`;
+    const f = (t) => new Date(t).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    div.title = `Сон: ${f(segStart)} – ${en > now ? "…" : f(segEnd)}`;
+    timeline.appendChild(div);
+  }
+
+  // Метки кормлений
+  let dayMl = 0;
+  for (const fd of feedings) {
+    const t = new Date(fd.at).getTime();
+    if (t < dayStart || t >= dayEnd) continue;
+    dayMl += fd.amount_ml;
+
+    const div = document.createElement("div");
+    div.className = "tl-feed";
+    div.style.left = `${((t - dayStart) / DAY_MS) * 100}%`;
+    div.title = `${new Date(t).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })} — ${fd.amount_ml} мл`;
+    timeline.appendChild(div);
+  }
+
+  $("day-stats").innerHTML = `
+    <span>😴 Сон: <b>${fmtDuration(sleepMs)}</b></span>
+    <span>🍼 Еда: <b>${dayMl} мл</b></span>
+  `;
+};
+
+const openDay = () => {
+  $("day-date").value = toLocalInput(new Date().toISOString()).slice(0, 10);
+  renderDay();
+  dayDialog.showModal();
+};
+
+$("day-btn").addEventListener("click", openDay);
+$("day-close").addEventListener("click", () => dayDialog.close());
+$("day-date").addEventListener("change", renderDay);
+
 // ---------- boot ----------
 const refresh = async () => {
   [entries, active, feedings] = await Promise.all([
@@ -365,6 +431,7 @@ const refresh = async () => {
   renderJournal();
   prefillFeedingForm();
   renderFeedingJournal();
+  if (dayDialog.open) renderDay();
 };
 
 refresh();
