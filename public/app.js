@@ -71,8 +71,31 @@ const renderTimer = () => {
 };
 
 const tick = () => {
-  if (!active) return;
-  $("timer-elapsed").textContent = fmtClock(Date.now() - new Date(active.started_at));
+  if (active) {
+    $("timer-elapsed").textContent = fmtClock(Date.now() - new Date(active.started_at));
+  }
+  renderLastSleep();
+};
+
+// Прошло с окончания последнего сна (если меньше 24 ч)
+const renderLastSleep = () => {
+  const el = $("last-sleep");
+  if (active) {
+    el.classList.add("hidden");
+    return;
+  }
+  const last = entries.find((e) => e.ended_at);
+  if (!last) {
+    el.classList.add("hidden");
+    return;
+  }
+  const since = Date.now() - new Date(last.ended_at).getTime();
+  if (since >= 24 * 60 * 60 * 1000) {
+    el.classList.add("hidden");
+    return;
+  }
+  el.textContent = `Последний сон закончился ${fmtDuration(since)} назад`;
+  el.classList.remove("hidden");
 };
 
 $("timer-btn").addEventListener("click", async () => {
