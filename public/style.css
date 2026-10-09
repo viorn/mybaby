@@ -70,6 +70,7 @@ h2 { font-size: 1.05rem; font-weight: 600; }
   font-variant-numeric: tabular-nums;
   margin: 8px 0 16px;
 }
+.timer-elapsed.awake { color: #e0a458; }
 
 .timer-btn {
   font-size: 1rem;

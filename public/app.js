@@ -46,6 +46,8 @@ let editingId = null;
 let tickTimer = null;
 
 // ---------- timer ----------
+const lastEndedAt = () => entries.find((e) => e.ended_at)?.ended_at;
+
 const renderTimer = () => {
   const pairs = [
     { status: $("timer-status"), elapsed: $("timer-elapsed"), btn: $("timer-btn") },
@@ -55,18 +57,25 @@ const renderTimer = () => {
   for (const { status, elapsed, btn } of pairs) {
     if (active) {
       const started = new Date(active.started_at);
-      status.textContent = `Спит с ${started.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+      status.textContent = `😴 Спит с ${started.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
       status.classList.add("active");
-      elapsed.classList.remove("hidden");
+      elapsed.classList.remove("hidden", "awake");
       elapsed.textContent = fmtClock(Date.now() - started);
       btn.textContent = "Разбудить";
       btn.classList.add("stop");
     } else {
-      status.textContent = "Не спит";
+      status.textContent = "🙂 Не спит";
       status.classList.remove("active");
-      elapsed.classList.add("hidden");
       btn.textContent = "Начать сон";
       btn.classList.remove("stop");
+      const lastEnded = lastEndedAt();
+      if (lastEnded) {
+        elapsed.classList.remove("hidden");
+        elapsed.classList.add("awake");
+        elapsed.textContent = fmtClock(Date.now() - new Date(lastEnded).getTime());
+      } else {
+        elapsed.classList.add("hidden");
+      }
     }
   }
 
@@ -75,23 +84,37 @@ const renderTimer = () => {
 };
 
 const tick = () => {
+  const now = Date.now();
   if (active) {
-    const ms = Date.now() - new Date(active.started_at);
-    $("timer-elapsed").textContent = fmtClock(ms);
-    $("home-elapsed").textContent = fmtClock(ms);
+    const ms = fmtClock(now - new Date(active.started_at));
+    $("timer-elapsed").textContent = ms;
+    $("home-elapsed").textContent = ms;
+  } else {
+    const lastEnded = lastEndedAt();
+    if (lastEnded) {
+      const ms = fmtClock(now - new Date(lastEnded).getTime());
+      for (const id of ["timer-elapsed", "home-elapsed"]) {
+        const el = $(id);
+        el.textContent = ms;
+        el.classList.add("awake");
+      }
+    }
   }
   renderLastSleep();
 };
 
-// Прошло с окончания последнего сна (если меньше 24 ч)
+// Абсолютное время окончания последнего сна
 const renderLastSleep = () => {
   let text = null;
-  const last = entries.find((e) => e.ended_at);
-  if (!active && last) {
-    const since = Date.now() - new Date(last.ended_at).getTime();
-    if (since < 24 * 60 * 60 * 1000) {
-      text = `Последний сон закончился ${fmtDuration(since)} назад`;
-    }
+  const lastEnded = lastEndedAt();
+  if (!active && lastEnded) {
+    const ended = new Date(lastEnded);
+    const now = new Date();
+    const timeStr = ended.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
+    text =
+      ended.toDateString() === now.toDateString()
+        ? `Последний сон закончился в ${timeStr}`
+        : `Последний сон закончился ${timeStr} ${ended.toLocaleDateString("ru-RU", { day: "numeric", month: "short" })}`;
   }
   for (const id of ["last-sleep", "home-last"]) {
     const el = $(id);
