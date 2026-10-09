@@ -47,6 +47,16 @@ main {
   font-weight: 600;
 }
 
+/* На узких экранах 4 вкладки не влезают — ужимаем */
+@media (max-width: 420px) {
+  .tabs { gap: 5px; }
+  .tab-btn {
+    font-size: 0.85rem;
+    padding: 10px 4px;
+    min-width: 0;
+  }
+}
+
 h1 { font-size: 1.4rem; font-weight: 600; }
 h2 { font-size: 1.05rem; font-weight: 600; }
 
