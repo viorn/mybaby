@@ -720,10 +720,11 @@ const renderWeek = () => {
     }).length
   );
   const avgFeedMl = totalFeed.count ? Math.round(totalFeed.ml / totalFeed.count) : 0;
+  const avgMlPerDay = Math.round(totalFeed.ml / countedDays);
   $("week-summary").innerHTML = `
     <span>😴 Сон: <b>${fmtDuration(totalSleep)}</b> · ${fmtDuration(totalSleep / countedDays)}/сут</span>
     <span>🍼 Кормлений: <b>${totalFeed.count}</b> · ${(totalFeed.count / countedDays).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}/сут</span>
-    <span>🥛 Объём: <b>${totalFeed.ml} мл</b> · среднее ${avgFeedMl} мл</span>
+    <span>🥛 Объём: <b>${totalFeed.ml} мл</b> · ${avgMlPerDay} мл/сут · среднее ${avgFeedMl} мл</span>
   `;
 };
 
