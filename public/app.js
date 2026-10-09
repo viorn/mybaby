@@ -8,7 +8,8 @@ const api = async (path, opts = {}) => {
   });
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    throw new Error(data.error || `HTTP ${res.status}`);
+    // status нужен для тихой обработки конфликтов (409) между клиентами
+    throw Object.assign(new Error(data.error || `HTTP ${res.status}`), { status: res.status });
   }
   return res.status === 204 ? null : res.json();
 };
@@ -124,19 +125,29 @@ const renderLastSleep = () => {
   }
 };
 
+let sleepBusy = false;
+
 const toggleSleep = async () => {
+  if (sleepBusy) return; // защита от двойного клика и гонки между устройствами
+  sleepBusy = true;
+  for (const id of ["timer-btn", "home-sleep-btn"]) $(id).disabled = true;
   try {
     if (active) {
       await api("/api/timer/stop", { method: "POST" });
     } else {
-      const note = ($("home-note").value.trim() || $("timer-note").value.trim());
+      const note = $("home-note").value.trim() || $("timer-note").value.trim();
       await api("/api/timer/start", { method: "POST", body: JSON.stringify({ note }) });
       $("home-note").value = "";
       $("timer-note").value = "";
     }
     await refresh();
   } catch (e) {
-    alert(e.message);
+    // 409: другой клиент уже переключил состояние — просто синхронизируемся
+    if (e.status === 409) await refresh();
+    else alert(e.message);
+  } finally {
+    sleepBusy = false;
+    for (const id of ["timer-btn", "home-sleep-btn"]) $(id).disabled = false;
   }
 };
 
@@ -366,12 +377,22 @@ const renderFeedingJournal = () => {
 const FEEDING_AMOUNT_IDS = ["home-feeding-amount", "tab-feeding-amount"];
 const FEEDING_LAST_IDS = ["home-feeding-last", "tab-feeding-last"];
 
+// Поля, которые пользователь редактирует, не перезаписываются при refresh
+const isDirty = (el) => el.dataset.dirty === "1";
+for (const id of [...FEEDING_AMOUNT_IDS, "feeding-add-amount"]) {
+  $(id).addEventListener("input", (e) => {
+    e.target.dataset.dirty = "1";
+  });
+}
+
 const prefillFeedingForm = () => {
   const saved = Number(localStorage.getItem(AMOUNT_KEY));
   const lastServer = feedings[0]?.amount_ml;
   const amount = saved || lastServer || 60;
-  for (const id of FEEDING_AMOUNT_IDS) $(id).value = amount;
-  $("feeding-add-amount").value = amount;
+  for (const id of [...FEEDING_AMOUNT_IDS, "feeding-add-amount"]) {
+    const el = $(id);
+    if (!isDirty(el)) el.value = amount;
+  }
 };
 
 // Последнее кормление — статус в виджетах
@@ -402,6 +423,7 @@ const saveFeedingNow = async (amountId) => {
       body: JSON.stringify({ at: new Date().toISOString(), amount_ml: amount }),
     });
     localStorage.setItem(AMOUNT_KEY, String(amount));
+    delete $(amountId).dataset.dirty;
     await refresh();
   } catch (e) {
     alert(e.message);
@@ -429,6 +451,7 @@ $("feeding-add-save").addEventListener("click", async () => {
     });
     localStorage.setItem(AMOUNT_KEY, String(amount));
     $("feeding-add-form").classList.add("hidden");
+    delete $("feeding-add-amount").dataset.dirty;
     await refresh();
   } catch (e) {
     alert(e.message);
