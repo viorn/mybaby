@@ -535,8 +535,13 @@ const renderDay = () => {
   const timeline = $("home-timeline");
   timeline.innerHTML = "";
 
-  // Часы 0..24
-  $("home-hours").innerHTML = Array.from({ length: 25 }, (_, h) => `<span>${h}</span>`).join("");
+  // Часы 0..24: на узких экранах подписываем каждую 2-ю часовую отметку,
+  // иначе цифры сливаются
+  const step = timeline.clientWidth < 380 ? 2 : 1;
+  $("home-hours").innerHTML = Array.from(
+    { length: Math.floor(24 / step) + 1 },
+    (_, i) => `<span>${i * step}</span>`
+  ).join("");
 
   // Сегменты сна (обрезаем по границам дня, включая сон с прошлых суток)
   let sleepMs = 0;
@@ -578,6 +583,13 @@ const renderDay = () => {
 };
 
 $("home-day-date").addEventListener("change", renderDay);
+
+// Пересчитываем шаг подписей часов при изменении ширины экрана
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderDay, 200);
+});
 
 // ---------- главная: действия ----------
 $("home-export-csv").addEventListener("click", () => exportData("csv"));

@@ -68,12 +68,16 @@ h2 { font-size: 1.05rem; font-weight: 600; }
 .timer-elapsed {
   font-size: 2.6rem;
   font-variant-numeric: tabular-nums;
-  margin: 8px 0 16px;
+  /* нижний отступ не нужен: зазор до кнопки задаёт margin-top у .timer-btn */
+  margin: 8px 0 0;
 }
 .timer-elapsed.awake { color: #e0a458; }
 
 .timer-btn {
   font-size: 1rem;
+  /* 16px — как margin-bottom у .timer-elapsed; при скрытом elapsed
+     (чистая база без записей) это единственный зазор от статуса */
+  margin-top: 16px;
   padding: 12px 32px;
   border: none;
   border-radius: 999px;
