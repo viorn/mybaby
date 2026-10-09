@@ -709,8 +709,16 @@ const renderWeek = () => {
     (a, b) => ({ count: a.count + b.count, ml: a.ml + b.ml }),
     { count: 0, ml: 0 }
   );
-  // Средние считаем только по прошедшим дням недели
-  const countedDays = Math.max(1, days.filter((d) => d.getTime() <= now).length);
+  // Средние считаем только по дням, в которых есть хоть одна запись
+  // (пустые дни не размывают средние значения)
+  const countedDays = Math.max(
+    1,
+    days.filter((d) => {
+      if (d.getTime() > now) return false;
+      const key = d.toDateString();
+      return (sleepByDay.get(key) || 0) > 0 || feedByDay.has(key);
+    }).length
+  );
   const avgFeedMl = totalFeed.count ? Math.round(totalFeed.ml / totalFeed.count) : 0;
   $("week-summary").innerHTML = `
     <span>😴 Сон: <b>${fmtDuration(totalSleep)}</b> · ${fmtDuration(totalSleep / countedDays)}/сут</span>
