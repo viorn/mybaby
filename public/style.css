@@ -317,4 +317,26 @@ dialog h3 { margin-bottom: 4px; font-size: 1rem; }
 }
 .day-stats b { color: var(--accent); }
 
+/* ---- Главная: действия ---- */
+.home-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 24px;
+}
+.action-btn {
+  font: inherit;
+  padding: 14px 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: center;
+}
+.action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .hidden { display: none !important; }

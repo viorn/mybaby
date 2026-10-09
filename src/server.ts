@@ -92,6 +92,26 @@ const server = Bun.serve({
         });
       }
 
+      // ---------- Импорт ----------
+      if (pathname === "/api/import" && req.method === "POST") {
+        const type = url.searchParams.get("type") === "feedings" ? "feedings" : "entries";
+        const items = Array.isArray(body) ? body : body.items;
+        if (!Array.isArray(items)) return json({ error: "Ожидается массив записей" }, 400);
+
+        let imported = 0;
+        for (const it of items) {
+          if (type === "entries") {
+            if (!it?.started_at) continue;
+            createEntry(String(it.started_at), it.ended_at ? String(it.ended_at) : null, String(it.note ?? ""));
+          } else {
+            if (!it?.at) continue;
+            createFeeding(String(it.at), Math.max(0, Math.round(Number(it.amount_ml) || 0)));
+          }
+          imported++;
+        }
+        return json({ ok: true, imported });
+      }
+
       // ---------- Питание ----------
       if (pathname === "/api/feedings" && req.method === "GET") {
         return json(listFeedings());

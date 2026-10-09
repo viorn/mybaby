@@ -47,58 +47,60 @@ let tickTimer = null;
 
 // ---------- timer ----------
 const renderTimer = () => {
-  const statusEl = $("timer-status");
-  const elapsedEl = $("timer-elapsed");
-  const btn = $("timer-btn");
-  const noteWrap = $("timer-note-wrap");
+  const pairs = [
+    { status: $("timer-status"), elapsed: $("timer-elapsed"), btn: $("timer-btn") },
+    { status: $("home-status"), elapsed: $("home-elapsed"), btn: $("home-sleep-btn") },
+  ];
 
-  if (active) {
-    const started = new Date(active.started_at);
-    statusEl.textContent = `Спит с ${started.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
-    statusEl.classList.add("active");
-    elapsedEl.classList.remove("hidden");
-    noteWrap.classList.add("hidden");
-    btn.textContent = "Разбудить";
-    btn.classList.add("stop");
-  } else {
-    statusEl.textContent = "Не спит";
-    statusEl.classList.remove("active");
-    elapsedEl.classList.add("hidden");
-    noteWrap.classList.remove("hidden");
-    btn.textContent = "Начать сон";
-    btn.classList.remove("stop");
+  for (const { status, elapsed, btn } of pairs) {
+    if (active) {
+      const started = new Date(active.started_at);
+      status.textContent = `Спит с ${started.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+      status.classList.add("active");
+      elapsed.classList.remove("hidden");
+      elapsed.textContent = fmtClock(Date.now() - started);
+      btn.textContent = "Разбудить";
+      btn.classList.add("stop");
+    } else {
+      status.textContent = "Не спит";
+      status.classList.remove("active");
+      elapsed.classList.add("hidden");
+      btn.textContent = "Начать сон";
+      btn.classList.remove("stop");
+    }
   }
+
+  const noteWrap = $("timer-note-wrap");
+  noteWrap.classList.toggle("hidden", !!active);
 };
 
 const tick = () => {
   if (active) {
-    $("timer-elapsed").textContent = fmtClock(Date.now() - new Date(active.started_at));
+    const ms = Date.now() - new Date(active.started_at);
+    $("timer-elapsed").textContent = fmtClock(ms);
+    $("home-elapsed").textContent = fmtClock(ms);
   }
   renderLastSleep();
 };
 
 // Прошло с окончания последнего сна (если меньше 24 ч)
 const renderLastSleep = () => {
-  const el = $("last-sleep");
-  if (active) {
-    el.classList.add("hidden");
-    return;
-  }
+  let text = null;
   const last = entries.find((e) => e.ended_at);
-  if (!last) {
-    el.classList.add("hidden");
-    return;
+  if (!active && last) {
+    const since = Date.now() - new Date(last.ended_at).getTime();
+    if (since < 24 * 60 * 60 * 1000) {
+      text = `Последний сон закончился ${fmtDuration(since)} назад`;
+    }
   }
-  const since = Date.now() - new Date(last.ended_at).getTime();
-  if (since >= 24 * 60 * 60 * 1000) {
-    el.classList.add("hidden");
-    return;
+  for (const id of ["last-sleep", "home-last"]) {
+    const el = $(id);
+    el.classList.toggle("hidden", !text);
+    if (text) el.textContent = text;
   }
-  el.textContent = `Последний сон закончился ${fmtDuration(since)} назад`;
-  el.classList.remove("hidden");
 };
 
-$("timer-btn").addEventListener("click", async () => {
+const toggleSleep = async () => {
   try {
     if (active) {
       await api("/api/timer/stop", { method: "POST" });
@@ -111,7 +113,10 @@ $("timer-btn").addEventListener("click", async () => {
   } catch (e) {
     alert(e.message);
   }
-});
+};
+
+$("timer-btn").addEventListener("click", toggleSleep);
+$("home-sleep-btn").addEventListener("click", toggleSleep);
 
 // ---------- journal ----------
 const renderJournal = () => {
@@ -168,8 +173,9 @@ const showTab = (name) => {
   document.querySelectorAll(".tab-btn").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name)
   );
-  $("tab-sleep").classList.toggle("hidden", name !== "sleep");
-  $("tab-feeding").classList.toggle("hidden", name !== "feeding");
+  for (const tab of ["home", "sleep", "feeding"]) {
+    $(`tab-${tab}`).classList.toggle("hidden", tab !== name);
+  }
 };
 
 document.querySelectorAll(".tab-btn").forEach((b) =>
@@ -205,12 +211,14 @@ $("add-save").addEventListener("click", async () => {
 });
 
 // ---------- export ----------
-const exportData = (format) => {
+const exportData = (format, withDates = true) => {
   const params = new URLSearchParams({ format });
-  const from = $("export-from").value;
-  const to = $("export-to").value;
-  if (from) params.set("from", from);
-  if (to) params.set("to", to);
+  if (withDates) {
+    const from = $("export-from").value;
+    const to = $("export-to").value;
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
+  }
   window.location.href = `/api/export?${params}`;
 };
 
@@ -314,27 +322,40 @@ const renderFeedingJournal = () => {
   list.appendChild(total);
 };
 
+const FEEDING_FORMS = [
+  ["feeding-at", "feeding-amount"],
+  ["home-feeding-at", "home-feeding-amount"],
+];
+
 const prefillFeedingForm = () => {
-  $("feeding-at").value = toLocalInput(new Date().toISOString());
   const saved = Number(localStorage.getItem(AMOUNT_KEY));
   const lastServer = feedings[0]?.amount_ml;
-  $("feeding-amount").value = saved || lastServer || 60;
+  const amount = saved || lastServer || 60;
+  for (const [atId, amountId] of FEEDING_FORMS) {
+    $(atId).value = toLocalInput(new Date().toISOString());
+    $(amountId).value = amount;
+  }
 };
 
-$("feeding-save").addEventListener("click", async () => {
-  const amount = Math.max(0, Math.round(Number($("feeding-amount").value) || 0));
+const saveFeeding = async (atId, amountId) => {
+  const amount = Math.max(0, Math.round(Number($(amountId).value) || 0));
   try {
     await api("/api/feedings", {
       method: "POST",
-      body: JSON.stringify({ at: fromLocalInput($("feeding-at").value), amount_ml: amount }),
+      body: JSON.stringify({ at: fromLocalInput($(atId).value), amount_ml: amount }),
     });
     localStorage.setItem(AMOUNT_KEY, String(amount));
     await refresh();
-    $("feeding-at").value = toLocalInput(new Date().toISOString());
+    $(atId).value = toLocalInput(new Date().toISOString());
   } catch (e) {
     alert(e.message);
   }
-});
+};
+
+$("feeding-save").addEventListener("click", () => saveFeeding("feeding-at", "feeding-amount"));
+$("home-feeding-save").addEventListener("click", () =>
+  saveFeeding("home-feeding-at", "home-feeding-amount")
+);
 
 // ---------- диалог кормления ----------
 const feedingDialog = $("feeding-dialog");
@@ -441,6 +462,39 @@ const openDay = () => {
 $("day-btn").addEventListener("click", openDay);
 $("day-close").addEventListener("click", () => dayDialog.close());
 $("day-date").addEventListener("change", renderDay);
+
+// ---------- главная: действия ----------
+$("home-day-btn").addEventListener("click", openDay);
+$("home-export-csv").addEventListener("click", () => exportData("csv", false));
+$("home-export-json").addEventListener("click", () => exportData("json", false));
+
+const importJson = async (file) => {
+  const data = JSON.parse(await file.text());
+  const items = Array.isArray(data) ? data : data.items;
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error("файл не содержит записей");
+  }
+  const isFeeding = items.every((it) => it?.at !== undefined || it?.amount_ml !== undefined);
+  const type = isFeeding ? "feedings" : "entries";
+  const label = type === "feedings" ? "кормления" : "сон";
+  if (!confirm(`Записей в файле: ${items.length}. Импортировать как «${label}»?`)) return;
+
+  const res = await api(`/api/import?type=${type}`, { method: "POST", body: JSON.stringify(items) });
+  alert(`Импортировано записей: ${res.imported}`);
+  await refresh();
+};
+
+$("home-import-btn").addEventListener("click", () => $("home-import-file").click());
+$("home-import-file").addEventListener("change", async (ev) => {
+  const file = ev.target.files[0];
+  if (!file) return;
+  try {
+    await importJson(file);
+  } catch (e) {
+    alert(`Ошибка импорта: ${e.message}`);
+  }
+  ev.target.value = "";
+});
 
 // ---------- boot ----------
 const refresh = async () => {

@@ -10,12 +10,47 @@
 <body>
   <main>
     <nav class="tabs">
-      <button class="tab-btn active" data-tab="sleep">🌙 Сон</button>
+      <button class="tab-btn active" data-tab="home">🏠 Главная</button>
+      <button class="tab-btn" data-tab="sleep">🌙 Сон</button>
       <button class="tab-btn" data-tab="feeding">🍼 Питание</button>
     </nav>
 
+    <!-- ==================== ГЛАВНАЯ ==================== -->
+    <div id="tab-home">
+      <!-- Сон: статус + старт/стоп -->
+      <section class="timer">
+        <div id="home-status" class="timer-status">Не спит</div>
+        <div id="home-last" class="last-sleep hidden"></div>
+        <div id="home-elapsed" class="timer-elapsed hidden">00:00</div>
+        <button id="home-sleep-btn" class="timer-btn">Начать сон</button>
+      </section>
+
+      <!-- Быстрое кормление -->
+      <section class="timer">
+        <h2>🍼 Кормление</h2>
+        <div class="feeding-form">
+          <label>Закончило есть
+            <input id="home-feeding-at" type="datetime-local" />
+          </label>
+          <label>Объём, мл
+            <input id="home-feeding-amount" type="number" inputmode="numeric" min="0" step="5" value="60" />
+          </label>
+          <button id="home-feeding-save" class="timer-btn">Записать</button>
+        </div>
+      </section>
+
+      <!-- Действия -->
+      <section class="home-actions">
+        <button id="home-export-csv" class="action-btn">📤 Экспорт CSV</button>
+        <button id="home-export-json" class="action-btn">📤 Экспорт JSON</button>
+        <button id="home-import-btn" class="action-btn">📥 Импорт JSON</button>
+        <button id="home-day-btn" class="action-btn">📊 Обзор дня</button>
+        <input id="home-import-file" type="file" accept=".json,application/json" class="hidden" />
+      </section>
+    </div>
+
     <!-- ==================== СОН ==================== -->
-    <div id="tab-sleep">
+    <div id="tab-sleep" class="hidden">
       <!-- Таймер -->
       <section class="timer">
         <div id="timer-status" class="timer-status">Не спит</div>
