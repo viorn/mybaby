@@ -393,21 +393,23 @@ $("feeding-edit-delete").addEventListener("click", async () => {
 });
 
 // ---------- визуализация дня ----------
-const dayDialog = $("day-dialog");
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const renderDay = () => {
-  const d = $("day-date").value;
+  if (!$("home-day-date").value) {
+    $("home-day-date").value = toLocalInput(new Date().toISOString()).slice(0, 10);
+  }
+  const d = $("home-day-date").value;
   if (!d) return;
 
   const dayStart = new Date(`${d}T00:00:00`).getTime();
   const dayEnd = dayStart + DAY_MS;
   const now = Date.now();
-  const timeline = $("day-timeline");
+  const timeline = $("home-timeline");
   timeline.innerHTML = "";
 
   // Часы 0..24
-  $("day-hours").innerHTML = Array.from({ length: 25 }, (_, h) => `<span>${h}</span>`).join("");
+  $("home-hours").innerHTML = Array.from({ length: 25 }, (_, h) => `<span>${h}</span>`).join("");
 
   // Сегменты сна (обрезаем по границам дня, включая сон с прошлых суток)
   let sleepMs = 0;
@@ -442,23 +444,15 @@ const renderDay = () => {
     timeline.appendChild(div);
   }
 
-  $("day-stats").innerHTML = `
+  $("home-stats").innerHTML = `
     <span>😴 Сон: <b>${fmtDuration(sleepMs)}</b></span>
     <span>🍼 Еда: <b>${dayMl} мл</b></span>
   `;
 };
 
-const openDay = () => {
-  $("day-date").value = toLocalInput(new Date().toISOString()).slice(0, 10);
-  renderDay();
-  dayDialog.showModal();
-};
-
-$("day-close").addEventListener("click", () => dayDialog.close());
-$("day-date").addEventListener("change", renderDay);
+$("home-day-date").addEventListener("change", renderDay);
 
 // ---------- главная: действия ----------
-$("home-day-btn").addEventListener("click", openDay);
 $("home-export-csv").addEventListener("click", () => exportData("csv"));
 $("home-export-json").addEventListener("click", () => exportData("json"));
 
@@ -521,7 +515,7 @@ const refresh = async () => {
   renderJournal();
   prefillFeedingForm();
   renderFeedingJournal();
-  if (dayDialog.open) renderDay();
+  renderDay();
 };
 
 refresh();

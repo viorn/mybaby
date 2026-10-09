@@ -25,6 +25,23 @@
         <button id="home-sleep-btn" class="timer-btn">Начать сон</button>
       </section>
 
+      <!-- Обзор дня -->
+      <section class="timer day-section">
+        <h2>📊 Обзор дня</h2>
+        <div class="day-head">
+          <input id="home-day-date" type="date" />
+        </div>
+        <div class="timeline-wrap">
+          <div id="home-timeline" class="timeline"></div>
+          <div class="timeline-hours" id="home-hours"></div>
+        </div>
+        <div class="legend">
+          <span><i class="legend-sleep"></i> сон</span>
+          <span><i class="legend-feed"></i> кормление</span>
+        </div>
+        <div id="home-stats" class="day-stats"></div>
+      </section>
+
       <!-- Быстрое кормление -->
       <section class="timer">
         <h2>🍼 Кормление</h2>
@@ -48,7 +65,6 @@
         <button id="home-export-csv" class="action-btn">📤 Экспорт CSV</button>
         <button id="home-export-json" class="action-btn">📤 Экспорт JSON</button>
         <button id="home-import-btn" class="action-btn">📥 Импорт JSON</button>
-        <button id="home-day-btn" class="action-btn">📊 Обзор дня</button>
         <input id="home-import-file" type="file" accept=".json,application/json" class="hidden" />
       </section>
     </div>
@@ -137,26 +153,6 @@
         <button type="button" id="feeding-edit-cancel" class="ghost-btn">Отмена</button>
       </div>
     </form>
-  </dialog>
-
-  <!-- Диалог визуализации дня -->
-  <dialog id="day-dialog">
-    <div class="day-head">
-      <input id="day-date" type="date" />
-      <button id="day-close" class="ghost-btn">Закрыть</button>
-    </div>
-
-    <div class="timeline-wrap">
-      <div id="day-timeline" class="timeline"></div>
-      <div class="timeline-hours" id="day-hours"></div>
-    </div>
-
-    <div class="legend">
-      <span><i class="legend-sleep"></i> сон</span>
-      <span><i class="legend-feed"></i> кормление</span>
-    </div>
-
-    <div id="day-stats" class="day-stats"></div>
   </dialog>
 
   <script src="app.js"></script>
