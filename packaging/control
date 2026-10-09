@@ -1,0 +1,12 @@
+Package: mybaby
+Version: __VERSION__
+Section: web
+Priority: optional
+Architecture: __ARCH__
+Maintainer: Vladimir Yuyukin <viorn89@yandex.ru>
+Depends: systemd | systemd-tmpfiles
+Description: Minimalist baby sleep tracker
+ Simple web application to track baby sleep: start/stop timer,
+ sleep journal with editing, notes and CSV/JSON export.
+ Runs as a systemd service (default port 8080), stores data in
+ /var/lib/mybaby/sleep.db.

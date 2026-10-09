@@ -71,6 +71,34 @@ PORT=8080 ./mybaby
 
 CSV: разделитель `;`, BOM, колонки `id;date;start;end;duration_min;note` — открывается в Excel без настроек.
 
+## Пакет для Debian (проверено на Debian 13)
+
+Сборка `.deb` — скрипт упаковывает бинарь, systemd-юнит и скрипты установки:
+
+```bash
+bun run build:deb       # → dist/mybaby_<версия>_<arch>.deb
+```
+
+Установка:
+
+```bash
+sudo apt install ./dist/mybaby_1.0.0_amd64.deb
+sudo systemctl start mybaby     # включается в автозапуск автоматически
+# → http://localhost:8080
+```
+
+Что делает пакет:
+
+| Путь | Назначение |
+|---|---|
+| `/usr/bin/mybaby` | Исполняемый файл |
+| `/lib/systemd/system/mybaby.service` | Юнит systemd |
+| `/var/lib/mybaby/` | Каталог данных (БД `sleep.db`) |
+
+При установке создаётся системный пользователь `mybaby`, сервис включается в автозапуск. Порт и интерфейс меняются в `/lib/systemd/system/mybaby.service` (`Environment=PORT=...`, `Environment=HOST=...`) с последующим `systemctl daemon-reload`.
+
+Удаление: `sudo apt remove mybaby` (данные и пользователь сохраняются), полное — `sudo apt purge mybaby` (данные всё равно удаляются вручную — скрипт подскажет команды).
+
 ## Развёртывание
 
 Пример юнита systemd:

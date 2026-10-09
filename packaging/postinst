@@ -1,0 +1,19 @@
+#!/bin/sh
+# Настраивается после распаковки пакета
+set -e
+
+# Системный пользователь для запуска сервиса
+if ! getent passwd mybaby >/dev/null 2>&1; then
+  adduser --system --group --home /var/lib/mybaby --no-create-home mybaby
+fi
+
+chown -R mybaby:mybaby /var/lib/mybaby
+
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl daemon-reload || true
+  systemctl enable mybaby.service || true
+  echo "mybaby установлен. Запуск: sudo systemctl start mybaby"
+  echo "Веб-интерфейс: http://localhost:8080"
+fi
+
+exit 0

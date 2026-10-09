@@ -1,0 +1,17 @@
+#!/bin/sh
+# Вызывается после удаления пакета ($1 = remove | purge)
+set -e
+
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl daemon-reload || true
+fi
+
+if [ "$1" = "purge" ]; then
+  echo "mybaby удалён."
+  echo "Данные (/var/lib/mybaby/sleep.db) и пользователь mybaby НЕ удалены."
+  echo "Чтобы удалить их вручную:"
+  echo "  sudo rm -rf /var/lib/mybaby"
+  echo "  sudo deluser --system mybaby"
+fi
+
+exit 0

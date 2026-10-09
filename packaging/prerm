@@ -1,0 +1,10 @@
+#!/bin/sh
+# Вызывается перед удалением пакета
+set -e
+
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl stop mybaby.service || true
+  systemctl disable mybaby.service || true
+fi
+
+exit 0

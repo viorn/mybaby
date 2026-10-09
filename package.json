@@ -4,7 +4,8 @@
   "type": "module",
   "scripts": {
     "dev": "bun run src/server.ts",
-    "build": "bun build --compile src/server.ts --outfile mybaby"
+    "build": "bun build --compile src/server.ts --outfile mybaby",
+    "build:deb": "bash scripts/build-deb.sh"
   },
   "devDependencies": {
     "@types/bun": "^1.4.2"
