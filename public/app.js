@@ -169,18 +169,26 @@ const HTML_ESCAPES = {
 const escapeHtml = (s) => s.replace(/[\u0026<>"']/g, (c) => HTML_ESCAPES[c]);
 
 // ---------- вкладки ----------
+const TAB_KEY = "mybaby:tab";
+const TABS = ["home", "sleep", "feeding"];
+
 const showTab = (name) => {
+  if (!TABS.includes(name)) name = "home";
   document.querySelectorAll(".tab-btn").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name)
   );
-  for (const tab of ["home", "sleep", "feeding"]) {
+  for (const tab of TABS) {
     $(`tab-${tab}`).classList.toggle("hidden", tab !== name);
   }
+  localStorage.setItem(TAB_KEY, name);
 };
 
 document.querySelectorAll(".tab-btn").forEach((b) =>
   b.addEventListener("click", () => showTab(b.dataset.tab))
 );
+
+// открываем вкладку, которая была активна в прошлый раз
+showTab(localStorage.getItem(TAB_KEY) || "home");
 
 // ---------- add form ----------
 $("add-btn").addEventListener("click", () => {
