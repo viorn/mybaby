@@ -603,6 +603,23 @@ const refresh = async () => {
 };
 
 refresh();
+
+// ---------- WebSocket: сервер сообщает об изменениях ----------
+const connectWs = () => {
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.onmessage = (ev) => {
+    try {
+      if (JSON.parse(ev.data).type === "changed") refresh();
+    } catch {
+      /* игнорируем некорректные сообщения */
+    }
+  };
+  ws.onclose = () => setTimeout(connectWs, 3000); // авто-переподключение
+  ws.onerror = () => ws.close();
+};
+
+connectWs();
+
 setInterval(() => {
   tick();
   if (entries.some((e) => !e.ended_at)) renderJournal(); // обновляем длительность активных

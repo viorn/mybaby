@@ -1,3 +1,4 @@
+import type { ServerWebSocket } from "bun";
 import {
   createEntry,
   createFeeding,
@@ -39,12 +40,35 @@ const json = (data: unknown, status = 200) =>
   });
 
 // По умолчанию слушает все интерфейсы (0.0.0.0); переопределяется через HOST
+// Открытые WebSocket-соединения + рассылка уведомлений об изменениях
+const sockets = new Set<ServerWebSocket<unknown>>();
+
+const broadcast = (msg: object) => {
+  const data = JSON.stringify(msg);
+  for (const ws of sockets) ws.send(data);
+};
+
 const server = Bun.serve({
   port: PORT,
   hostname: process.env.HOST ?? "0.0.0.0",
-  async fetch(req) {
+  // ---------- WebSocket: уведомления клиентов об изменениях ----------
+  websocket: {
+    open(ws) {
+      sockets.add(ws);
+    },
+    close(ws) {
+      sockets.delete(ws);
+    },
+    message() {},
+  },
+  async fetch(req, server) {
     const url = new URL(req.url);
     const { pathname } = url;
+
+    if (pathname === "/ws") {
+      if (server.upgrade(req)) return;
+      return new Response("Upgrade failed", { status: 400 });
+    }
 
     // ---------- API ----------
     if (pathname.startsWith("/api/")) {
@@ -61,7 +85,9 @@ const server = Bun.serve({
       if (pathname === "/api/entries" && req.method === "POST") {
         // Ручное добавление записи: { started_at, ended_at?, note? }
         if (!body.started_at) return json({ error: "started_at is required" }, 400);
-        return json(createEntry(body.started_at, body.ended_at ?? null, body.note ?? ""), 201);
+        const created = createEntry(body.started_at, body.ended_at ?? null, body.note ?? "");
+        broadcast({ type: "changed" });
+        return json(created, 201);
       }
 
       if (pathname === "/api/export" && req.method === "GET") {
@@ -128,6 +154,7 @@ const server = Bun.serve({
           createFeeding(String(it.at), Math.max(0, Math.round(Number(it.amount_ml) || 0)));
           importedFeedings++;
         }
+        broadcast({ type: "changed" });
         return json({ ok: true, importedEntries, importedFeedings });
       }
 
@@ -139,7 +166,9 @@ const server = Bun.serve({
       if (pathname === "/api/feedings" && req.method === "POST") {
         if (!body.at) return json({ error: "at is required" }, 400);
         const amount = Math.max(0, Math.round(Number(body.amount_ml) || 0));
-        return json(createFeeding(body.at, amount), 201);
+        const created = createFeeding(body.at, amount);
+        broadcast({ type: "changed" });
+        return json(created, 201);
       }
 
       const fm = pathname.match(/^\/api\/feedings\/(\d+)$/);
@@ -147,22 +176,32 @@ const server = Bun.serve({
         const fid = Number(fm[1]);
         if (!getFeeding(fid)) return json({ error: "Запись не найдена" }, 404);
 
-        if (req.method === "DELETE") return json({ ok: deleteFeeding(fid) });
+        if (req.method === "DELETE") {
+          const res = { ok: deleteFeeding(fid) };
+          broadcast({ type: "changed" });
+          return json(res);
+        }
 
         if (!body.at) return json({ error: "at is required" }, 400);
         const amount = Math.max(0, Math.round(Number(body.amount_ml) || 0));
-        return json(updateFeeding(fid, body.at, amount));
+        const updated = updateFeeding(fid, body.at, amount);
+        broadcast({ type: "changed" });
+        return json(updated);
       }
 
       if (pathname === "/api/timer/start" && req.method === "POST") {
         if (getActive()) return json({ error: "Сон уже активен" }, 409);
-        return json(startSleep(new Date().toISOString(), body.note ?? ""), 201);
+        const created = startSleep(new Date().toISOString(), body.note ?? "");
+        broadcast({ type: "changed" });
+        return json(created, 201);
       }
 
       if (pathname === "/api/timer/stop" && req.method === "POST") {
         const active = getActive();
         if (!active) return json({ error: "Нет активного сна" }, 409);
-        return json(stopSleep(active.id, new Date().toISOString()));
+        const updated = stopSleep(active.id, new Date().toISOString());
+        broadcast({ type: "changed" });
+        return json(updated);
       }
 
       let id: number;
@@ -171,11 +210,17 @@ const server = Bun.serve({
         id = Number(m[1]);
         if (!getEntry(id)) return json({ error: "Запись не найдена" }, 404);
 
-        if (req.method === "DELETE") return json({ ok: deleteEntry(id) });
+        if (req.method === "DELETE") {
+          const res = { ok: deleteEntry(id) };
+          broadcast({ type: "changed" });
+          return json(res);
+        }
 
         // PATCH: { started_at, ended_at|null, note }
         if (!body.started_at) return json({ error: "started_at is required" }, 400);
-        return json(updateEntry(id, body.started_at, body.ended_at ?? null, body.note ?? ""));
+        const updated = updateEntry(id, body.started_at, body.ended_at ?? null, body.note ?? "");
+        broadcast({ type: "changed" });
+        return json(updated);
       }
 
       return json({ error: "Not found" }, 404);
