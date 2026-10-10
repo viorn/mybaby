@@ -552,11 +552,18 @@ const renderDay = () => {
   timeline.innerHTML = "";
 
   // Часы 0..24: на узких экранах подписываем каждую 2-ю часовую отметку,
-  // иначе цифры сливаются
+  // иначе цифры сливаются. Подписи позиционируются абсолютно ровно на
+  // своей часовой отметке (left = доля суток); крайние выравниваются
+  // по краям, промежуточные — центром на отметке
   const step = timeline.clientWidth < 380 ? 2 : 1;
   $("home-hours").innerHTML = Array.from(
     { length: Math.floor(24 / step) + 1 },
-    (_, i) => `<span>${i * step}</span>`
+    (_, i) => {
+      const h = i * step;
+      const left = (h / 24) * 100;
+      const shift = h === 0 ? "translateX(0)" : h === 24 ? "translateX(-100%)" : "translateX(-50%)";
+      return `<span style="left:${left}%;transform:${shift}">${h}</span>`;
+    }
   ).join("");
 
   // Сегменты сна (обрезаем по границам дня, включая сон с прошлых суток)
