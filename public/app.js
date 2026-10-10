@@ -551,10 +551,11 @@ const renderDay = () => {
   const timeline = $("home-timeline");
   timeline.innerHTML = "";
 
-  // Часы 0..24: каждый час; для читаемости подписи располагаются в шахматном
-  // порядке — чётные под шкалой, нечётные над ней (соседние отметки не слипаются
-  // даже на узких экранах). Подписи позиционируются абсолютно ровно на своей
-  // часовой отметке (left = доля суток); крайние выравниваются по краям
+  // Часы 0..24: подписи располагаются в два ряда (над и под шкалой) в шахматном
+  // порядке, чтобы соседние отметки не слипались. Подписи позиционируются
+  // абсолютно ровно на своей часовой отметке (left = доля суток); крайние
+  // выравниваются по краям. На узких экранах (мобильные) шаг 4 часа:
+  // низ — 0, 4, 8 … 24, верх — 2, 6, 10 … 22
   const hourLabel = (h) => {
     const left = (h / 24) * 100;
     const shift = h === 0 ? "translateX(0)" : h === 24 ? "translateX(-100%)" : "translateX(-50%)";
@@ -562,8 +563,13 @@ const renderDay = () => {
   };
   const below = [];
   const above = [];
-  for (let h = 0; h <= 24; h++) {
-    (h % 2 === 0 ? below : above).push(hourLabel(h));
+  if (timeline.clientWidth < 380) {
+    for (let h = 0; h <= 24; h += 4) below.push(hourLabel(h));
+    for (let h = 2; h <= 22; h += 4) above.push(hourLabel(h));
+  } else {
+    for (let h = 0; h <= 24; h++) {
+      (h % 2 === 0 ? below : above).push(hourLabel(h));
+    }
   }
   $("home-hours").innerHTML = below.join("");
   $("home-hours-top").innerHTML = above.join("");
@@ -608,6 +614,13 @@ const renderDay = () => {
 };
 
 $("home-day-date").addEventListener("change", renderDay);
+
+// Пересчитываем схему подписей часов при изменении ширины экрана
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(renderDay, 200);
+});
 
 // ---------- обзор недели ----------
 let weekOffset = 0; // 0 = текущая неделя
