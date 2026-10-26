@@ -106,6 +106,7 @@ const tick = () => {
     }
   }
   renderLastSleep();
+  renderFeedingElapsed();
 };
 
 // Абсолютное время окончания последнего сна
@@ -394,6 +395,7 @@ const renderFeedingJournal = () => {
 
 const FEEDING_AMOUNT_IDS = ["home-feeding-amount", "tab-feeding-amount"];
 const FEEDING_LAST_IDS = ["home-feeding-last", "tab-feeding-last"];
+const FEEDING_ELAPSED_IDS = ["home-feeding-elapsed", "tab-feeding-elapsed"];
 
 // Поля, которые пользователь редактирует, не перезаписываются при refresh
 const isDirty = (el) => el.dataset.dirty === "1";
@@ -447,6 +449,21 @@ const renderLastFeeding = () => {
     const el = $(id);
     el.classList.toggle("hidden", !text);
     if (text) el.textContent = text;
+  }
+};
+
+// Сколько времени прошло с последнего кормления — большой таймер
+const renderFeedingElapsed = () => {
+  const last = feedings[0];
+  for (const id of FEEDING_ELAPSED_IDS) {
+    const el = $(id);
+    if (last) {
+      el.classList.remove("hidden");
+      el.classList.add("awake");
+      el.textContent = fmtClock(Date.now() - new Date(last.at).getTime());
+    } else {
+      el.classList.add("hidden");
+    }
   }
 };
 
