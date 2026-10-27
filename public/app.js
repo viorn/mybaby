@@ -649,6 +649,20 @@ $("toilet-save").addEventListener("click", async () => {
   }
 });
 
+$("home-toilet-save").addEventListener("click", async () => {
+  const note = $("home-toilet-note").value.trim();
+  try {
+    await api("/api/poops", {
+      method: "POST",
+      body: JSON.stringify({ at: new Date().toISOString(), note }),
+    });
+    $("home-toilet-note").value = "";
+    await refresh();
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
 // ---------- добавление покаканья вручную ----------
 $("toilet-add-btn").addEventListener("click", () => {
   $("toilet-add-form").classList.toggle("hidden");
