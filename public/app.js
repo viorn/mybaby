@@ -846,6 +846,13 @@ const renderWeek = () => {
     cur.ml += f.amount_ml;
     feedByDay.set(key, cur);
   }
+  const poopByDay = new Map(); // toDateString -> count
+  for (const p of poops) {
+    const t = new Date(p.at).getTime();
+    if (t < wsT || t >= weT) continue;
+    const key = new Date(t).toDateString();
+    poopByDay.set(key, (poopByDay.get(key) || 0) + 1);
+  }
 
   const days = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(ws);
@@ -876,7 +883,7 @@ const renderWeek = () => {
   // --- таблица по дням; клик — «Обзор дня» за эту дату ---
   const table = $("week-table");
   table.innerHTML =
-    "<thead><tr><th>День</th><th>😴 Сон</th><th>🍼 Кол-во</th><th>Объём</th></tr></thead>";
+    "<thead><tr><th>День</th><th>😴 Сон</th><th>🍼 Кол-во</th><th>Объём</th><th>💩 Туалет</th></tr></thead>";
   const tbody = document.createElement("tbody");
   for (const d of days) {
     const key = d.toDateString();
@@ -890,6 +897,7 @@ const renderWeek = () => {
       <td>${ms ? fmtDuration(ms) : "—"}</td>
       <td>${fd ? fd.count : "—"}</td>
       <td>${fd ? fd.ml + " мл" : "—"}</td>
+      <td>${poopByDay.get(key) ?? "—"}</td>
     `;
     tr.addEventListener("click", () => {
       $("home-day-date").value = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
@@ -918,10 +926,12 @@ const renderWeek = () => {
   );
   const avgFeedMl = totalFeed.count ? Math.round(totalFeed.ml / totalFeed.count) : 0;
   const avgMlPerDay = Math.round(totalFeed.ml / countedDays);
+  const totalPoop = [...poopByDay.values()].reduce((a, b) => a + b, 0);
   $("week-summary").innerHTML = `
     <span>😴 Сон: <b>${fmtDuration(totalSleep)}</b> · ${fmtDuration(totalSleep / countedDays)}/сут</span>
     <span>🍼 Кормлений: <b>${totalFeed.count}</b> · ${(totalFeed.count / countedDays).toLocaleString("ru-RU", { maximumFractionDigits: 1 })}/сут</span>
     <span>🥛 Объём: <b>${totalFeed.ml} мл</b> · ${avgMlPerDay} мл/сут · среднее ${avgFeedMl} мл</span>
+    <span>💩 Туалет: <b>${totalPoop}</b> · ${totalPoop ? (totalPoop / countedDays).toLocaleString("ru-RU", { maximumFractionDigits: 1 }) : 0}/сут</span>
   `;
 };
 
