@@ -47,6 +47,46 @@ main {
   font-weight: 600;
 }
 
+/* ---- Кнопка «Ещё» с выпадающим меню ---- */
+.tabs-more {
+  position: relative;
+  flex: 1;
+}
+.tabs-more .tab-btn { width: 100%; }
+
+.more-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+.more-item {
+  font: inherit;
+  font-size: 0.95rem;
+  text-align: left;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+}
+.more-item:hover { background: var(--accent-soft); }
+.more-item.active {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-soft);
+}
+
 /* На узких экранах 4 вкладки не влезают — ужимаем */
 @media (max-width: 420px) {
   .tabs { gap: 5px; }

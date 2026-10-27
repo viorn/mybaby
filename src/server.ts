@@ -2,21 +2,27 @@ import type { ServerWebSocket } from "bun";
 import {
   createEntry,
   createFeeding,
+  createPoop,
   deleteEntry,
   deleteFeeding,
+  deletePoop,
   getActive,
   getEntry,
   getFeeding,
+  getPoop,
   listEntries,
   listEntriesRange,
   listFeedings,
   listFeedingsRange,
+  listPoops,
   startSleep,
   stopSleep,
   updateEntry,
   updateFeeding,
+  updatePoop,
   type Entry,
   type Feeding,
+  type Poop,
 } from "./db";
 import indexHtml from "../public/index.html" with { type: "file" };
 import styleCss from "../public/style.css" with { type: "file" };
@@ -185,6 +191,36 @@ const server = Bun.serve({
         if (!body.at) return json({ error: "at is required" }, 400);
         const amount = Math.max(0, Math.round(Number(body.amount_ml) || 0));
         const updated = updateFeeding(fid, body.at, amount);
+        broadcast({ type: "changed" });
+        return json(updated);
+      }
+
+      // ---------- Покаканья ----------
+      if (pathname === "/api/poops" && req.method === "GET") {
+        return json(listPoops());
+      }
+
+      if (pathname === "/api/poops" && req.method === "POST") {
+        if (!body.at) return json({ error: "at is required" }, 400);
+        const created = createPoop(body.at, body.note ?? "");
+        broadcast({ type: "changed" });
+        return json(created, 201);
+      }
+
+      const pm = pathname.match(/^\/api\/poops\/(\d+)$/);
+      if (pm && (req.method === "PATCH" || req.method === "DELETE")) {
+        const pid = Number(pm[1]);
+        if (!getPoop(pid)) return json({ error: "Запись не найдена" }, 404);
+
+        if (req.method === "DELETE") {
+          const res = { ok: deletePoop(pid) };
+          broadcast({ type: "changed" });
+          return json(res);
+        }
+
+        // PATCH: { at, note }
+        if (!body.at) return json({ error: "at is required" }, 400);
+        const updated = updatePoop(pid, body.at, body.note ?? "");
         broadcast({ type: "changed" });
         return json(updated);
       }

@@ -13,7 +13,13 @@
       <button class="tab-btn active" data-tab="home">🏠 Главная</button>
       <button class="tab-btn" data-tab="sleep">🌙 Сон</button>
       <button class="tab-btn" data-tab="feeding">🍼 Питание</button>
-      <button class="tab-btn" data-tab="week">📊 Неделя</button>
+      <div class="tabs-more">
+        <button id="more-btn" class="tab-btn" type="button" aria-haspopup="true" aria-expanded="false">Ещё ▾</button>
+        <div id="more-menu" class="more-menu hidden">
+          <button class="more-item" data-tab="week" type="button">📊 Неделя</button>
+          <button class="more-item" data-tab="toilet" type="button">💩 Туалет</button>
+        </div>
+      </div>
     </nav>
 
     <!-- ==================== ГЛАВНАЯ ==================== -->
@@ -153,6 +159,36 @@
         <div id="week-summary" class="day-stats week-summary"></div>
       </section>
     </div>
+
+    <!-- ==================== ТУАЛЕТ ==================== -->
+    <div id="tab-toilet" class="hidden">
+      <!-- Быстрая запись -->
+      <section class="timer">
+        <h2>💩 Туалет</h2>
+        <div class="feeding-form">
+          <input id="toilet-note" type="text" placeholder="Комментарий (необязательно)" />
+          <button id="toilet-save" class="timer-btn">💩 Записать</button>
+        </div>
+        <div class="feeding-hint">Время — сейчас, комментарий можно добавить позже</div>
+      </section>
+
+      <!-- Журнал -->
+      <section>
+        <div class="journal-head">
+          <h2>Журнал</h2>
+          <button id="toilet-add-btn" class="ghost-btn">+ Добавить вручную</button>
+        </div>
+        <div id="toilet-add-form" class="edit-form hidden">
+          <label>Время <input id="toilet-add-at" type="datetime-local" /></label>
+          <label>Комментарий <input id="toilet-add-note" type="text" placeholder="Необязательно" /></label>
+          <div class="form-actions">
+            <button id="toilet-add-save">Сохранить</button>
+            <button id="toilet-add-cancel" class="ghost-btn">Отмена</button>
+          </div>
+        </div>
+        <ul id="toilet-journal"></ul>
+      </section>
+    </div>
   </main>
 
   <!-- Диалог редактирования сна -->
@@ -180,6 +216,20 @@
         <button type="submit" id="feeding-edit-save">Сохранить</button>
         <button type="button" id="feeding-edit-delete" class="danger">Удалить</button>
         <button type="button" id="feeding-edit-cancel" class="ghost-btn">Отмена</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Диалог редактирования покаканья -->
+  <dialog id="toilet-dialog">
+    <form id="toilet-edit-form" method="dialog">
+      <h3>Редактировать запись</h3>
+      <label>Время <input id="toilet-edit-at" type="datetime-local" required /></label>
+      <label>Комментарий <input id="toilet-edit-note" type="text" /></label>
+      <div class="form-actions">
+        <button type="submit" id="toilet-edit-save">Сохранить</button>
+        <button type="button" id="toilet-edit-delete" class="danger">Удалить</button>
+        <button type="button" id="toilet-edit-cancel" class="ghost-btn">Отмена</button>
       </div>
     </form>
   </dialog>

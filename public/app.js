@@ -241,26 +241,55 @@ const HTML_ESCAPES = {
 const escapeHtml = (s) => s.replace(/[\u0026<>"']/g, (c) => HTML_ESCAPES[c]);
 
 // ---------- вкладки ----------
-const TAB_KEY = "mybaby:tab";
-const TABS = ["home", "sleep", "feeding", "week"];
+const TABS = ["home", "sleep", "feeding", "week", "toilet"];
 
 const showTab = (name) => {
   if (!TABS.includes(name)) name = "home";
-  document.querySelectorAll(".tab-btn").forEach((b) =>
+  document.querySelectorAll(".tab-btn[data-tab]").forEach((b) =>
+    b.classList.toggle("active", b.dataset.tab === name)
+  );
+  document.querySelectorAll(".more-item").forEach((b) =>
     b.classList.toggle("active", b.dataset.tab === name)
   );
   for (const tab of TABS) {
     $(`tab-${tab}`).classList.toggle("hidden", tab !== name);
   }
-  localStorage.setItem(TAB_KEY, name);
+  closeMoreMenu();
 };
 
-document.querySelectorAll(".tab-btn").forEach((b) =>
+// ---------- выпадающее меню «Ещё» ----------
+const moreBtn = $("more-btn");
+const moreMenu = $("more-menu");
+
+const closeMoreMenu = () => {
+  moreMenu.classList.add("hidden");
+  moreBtn.setAttribute("aria-expanded", "false");
+};
+
+const toggleMoreMenu = () => {
+  const open = moreMenu.classList.toggle("hidden") === false;
+  moreBtn.setAttribute("aria-expanded", String(open));
+};
+
+moreBtn.addEventListener("click", toggleMoreMenu);
+
+// Клик вне меню закрывает его
+document.addEventListener("click", (ev) => {
+  if (!moreBtn.contains(ev.target) && !moreMenu.contains(ev.target)) closeMoreMenu();
+});
+document.addEventListener("keydown", (ev) => {
+  if (ev.key === "Escape") closeMoreMenu();
+});
+
+document.querySelectorAll(".tab-btn[data-tab]").forEach((b) =>
+  b.addEventListener("click", () => showTab(b.dataset.tab))
+);
+document.querySelectorAll(".more-item").forEach((b) =>
   b.addEventListener("click", () => showTab(b.dataset.tab))
 );
 
-// открываем вкладку, которая была активна в прошлый раз
-showTab(localStorage.getItem(TAB_KEY) || "home");
+// при открытии страницы всегда показываем Главную
+showTab("home");
 
 // ---------- add form ----------
 $("add-btn").addEventListener("click", () => {
@@ -406,6 +435,8 @@ for (const id of [
   "add-start",
   "add-end",
   "add-note",
+  "toilet-add-at",
+  "toilet-add-note",
 ]) {
   $(id).addEventListener("input", (e) => {
     e.target.dataset.dirty = "1";
@@ -420,6 +451,9 @@ const refreshOpenFormTimes = () => {
   }
   if (!$("add-form").classList.contains("hidden") && !isDirty($("add-start"))) {
     $("add-start").value = now;
+  }
+  if (!$("toilet-add-form").classList.contains("hidden") && !isDirty($("toilet-add-at"))) {
+    $("toilet-add-at").value = now;
   }
 };
 
@@ -546,6 +580,137 @@ $("feeding-edit-delete").addEventListener("click", async () => {
   try {
     await api(`/api/feedings/${editingFeedingId}`, { method: "DELETE" });
     feedingDialog.close();
+    await refresh();
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
+// ---------- покаканья ----------
+let poops = [];
+let editingPoopId = null;
+
+const renderToiletJournal = () => {
+  const list = $("toilet-journal");
+  list.innerHTML = "";
+
+  if (poops.length === 0) {
+    list.innerHTML = '<li class="empty">Пока нет записей</li>';
+    return;
+  }
+
+  // Итоги по дням считаем заранее
+  const totals = new Map();
+  for (const p of poops) {
+    const key = new Date(p.at).toDateString();
+    totals.set(key, (totals.get(key) || 0) + 1);
+  }
+
+  let lastDay = null;
+  for (const p of poops) {
+    const at = new Date(p.at);
+    const dayKey = at.toDateString();
+
+    if (dayKey !== lastDay) {
+      lastDay = dayKey;
+      const li = document.createElement("li");
+      li.className = "day-label";
+      li.innerHTML =
+        `${escapeHtml(dayName(at))} ` +
+        `<span class="feeding-day-total">(${totals.get(dayKey)})</span>`;
+      list.appendChild(li);
+    }
+
+    const li = document.createElement("li");
+    li.className = "entry";
+    li.innerHTML = `
+      <div class="entry-main">
+        <div class="entry-time">💩 ${at.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}</div>
+        ${p.note ? `<div class="entry-note">${escapeHtml(p.note)}</div>` : ""}
+      </div>
+    `;
+    li.addEventListener("click", () => openPoopEdit(p));
+    list.appendChild(li);
+  }
+};
+
+// Быстрая запись «сейчас» (время — текущее, комментарий по желанию)
+$("toilet-save").addEventListener("click", async () => {
+  const note = $("toilet-note").value.trim();
+  try {
+    await api("/api/poops", {
+      method: "POST",
+      body: JSON.stringify({ at: new Date().toISOString(), note }),
+    });
+    $("toilet-note").value = "";
+    await refresh();
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
+// ---------- добавление покаканья вручную ----------
+$("toilet-add-btn").addEventListener("click", () => {
+  $("toilet-add-form").classList.toggle("hidden");
+  $("toilet-add-at").value = toLocalInput(new Date().toISOString());
+});
+
+$("toilet-add-cancel").addEventListener("click", () => $("toilet-add-form").classList.add("hidden"));
+
+$("toilet-add-save").addEventListener("click", async () => {
+  if (!$("toilet-add-at").value) return alert("Укажите время");
+  try {
+    await api("/api/poops", {
+      method: "POST",
+      body: JSON.stringify({
+        at: fromLocalInput($("toilet-add-at").value),
+        note: $("toilet-add-note").value.trim(),
+      }),
+    });
+    $("toilet-add-form").classList.add("hidden");
+    $("toilet-add-note").value = "";
+    for (const id of ["toilet-add-at", "toilet-add-note"]) delete $(id).dataset.dirty;
+    await refresh();
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
+// ---------- диалог покаканья ----------
+const toiletDialog = $("toilet-dialog");
+
+const openPoopEdit = (p) => {
+  editingPoopId = p.id;
+  $("toilet-edit-at").value = toLocalInput(p.at);
+  $("toilet-edit-note").value = p.note;
+  toiletDialog.showModal();
+};
+
+$("toilet-edit-cancel").addEventListener("click", () => toiletDialog.close());
+
+$("toilet-edit-save").addEventListener("click", async (ev) => {
+  ev.preventDefault();
+  if (!$("toilet-edit-at").value) return alert("Укажите время");
+  try {
+    await api(`/api/poops/${editingPoopId}`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        at: fromLocalInput($("toilet-edit-at").value),
+        note: $("toilet-edit-note").value.trim(),
+      }),
+    });
+    toiletDialog.close();
+    await refresh();
+  } catch (e) {
+    alert(e.message);
+  }
+});
+
+$("toilet-edit-delete").addEventListener("click", async () => {
+  if (!confirm("Удалить запись?")) return;
+  try {
+    await api(`/api/poops/${editingPoopId}`, { method: "DELETE" });
+    toiletDialog.close();
     await refresh();
   } catch (e) {
     alert(e.message);
@@ -822,10 +987,11 @@ $("home-import-file").addEventListener("change", async (ev) => {
 
 // ---------- boot ----------
 const refresh = async () => {
-  [entries, active, feedings] = await Promise.all([
+  [entries, active, feedings, poops] = await Promise.all([
     api("/api/entries"),
     api("/api/active"),
     api("/api/feedings"),
+    api("/api/poops"),
   ]);
   renderTimer();
   tick();
@@ -833,6 +999,7 @@ const refresh = async () => {
   prefillFeedingForm();
   renderFeedingJournal();
   renderLastFeeding();
+  renderToiletJournal();
   renderDay();
   renderWeek();
   refreshOpenFormTimes();

@@ -33,6 +33,20 @@ db.exec(`
   );
 `);
 
+export type Poop = {
+  id: number;
+  at: string; // ISO UTC — время события
+  note: string;
+};
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS poops (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    at TEXT NOT NULL,
+    note TEXT NOT NULL DEFAULT ''
+  );
+`);
+
 export const getActive = (): Entry | undefined =>
   db
     .query<Entry, []>("SELECT * FROM entries WHERE ended_at IS NULL ORDER BY id DESC LIMIT 1")
@@ -122,5 +136,31 @@ export const updateFeeding = (id: number, at: string, amountMl: number): Feeding
 
 export const deleteFeeding = (id: number): boolean =>
   db.query("DELETE FROM feedings WHERE id = ?").run(id).changes > 0;
+
+// ---------- Покаканья ----------
+export const listPoops = (limit = 200): Poop[] =>
+  db
+    .query<Poop, [number]>("SELECT * FROM poops ORDER BY at DESC LIMIT ?")
+    .all(limit);
+
+export const getPoop = (id: number): Poop | undefined =>
+  db.query<Poop, [number]>("SELECT * FROM poops WHERE id = ?").get(id) ?? undefined;
+
+export const createPoop = (at: string, note = ""): Poop =>
+  db
+    .query<Poop, [string, string]>(
+      "INSERT INTO poops (at, note) VALUES (?, ?) RETURNING *"
+    )
+    .get(at, note)!;
+
+export const updatePoop = (id: number, at: string, note: string): Poop | undefined =>
+  db
+    .query<Poop, [string, string, number]>(
+      "UPDATE poops SET at = ?, note = ? WHERE id = ? RETURNING *"
+    )
+    .get(at, note, id) ?? undefined;
+
+export const deletePoop = (id: number): boolean =>
+  db.query("DELETE FROM poops WHERE id = ?").run(id).changes > 0;
 
 export default db;
